@@ -66,7 +66,7 @@ def load_data(control):
     print("TOP 5 MÁS CAROS")
     print("=" * 80)
 
-    print(tabulate(top5, headers="keys", tablefmt="fancy_grid"))
+    print(tabulate(list(top5), headers="keys", tablefmt="fancy_grid"))
 
     # -------- TOP 5 BARATOS --------
     print("\n" + "=" * 80)

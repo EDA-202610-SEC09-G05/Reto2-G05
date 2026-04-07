@@ -81,14 +81,22 @@ def load_data(catalog, size):
 
     lista_temp = sort_computers(lista_temp)
 
-    top5 = [format_output(c) for c in lista_temp[:5]]
+    # -------- TOP 5 --------
+    top5 = []
+    i = 0
 
+    while i < 5 and i < len(lista_temp):
+        top5.append(format_output(lista_temp[i]))
+        i += 1
+
+    # -------- BOTTOM 5 --------
+    # -------- BOTTOM 5 --------
     bottom5 = []
     i = len(lista_temp) - 1
     count = 0
 
     while count < 5 and i >= 0:
-        bottom5.insert(0, format_output(lista_temp[i]))
+        bottom5.insert(0, format_output(lista_temp[i]))  
         i -= 1
         count += 1
 
