@@ -82,7 +82,15 @@ def load_data(catalog, size):
     lista_temp = sort_computers(lista_temp)
 
     top5 = [format_output(c) for c in lista_temp[:5]]
-    bottom5 = [format_output(c) for c in lista_temp[-5:]]
+
+    bottom5 = []
+    i = len(lista_temp) - 1
+    count = 0
+
+    while count < 5 and i >= 0:
+        bottom5.insert(0, format_output(lista_temp[i]))
+        i -= 1
+        count += 1
 
     dtime = delta_time(inicio, get_time())
 

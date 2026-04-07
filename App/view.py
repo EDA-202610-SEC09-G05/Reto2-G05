@@ -22,6 +22,9 @@ def print_menu():
     print("7- Salir")
 
 def load_data(control):
+    from tabulate import tabulate
+    from App import logic as l
+
     while True:
         opcion = input("Ingrese el tamaño: 10, 20, 30, ..., 100: ")
         if opcion.isdigit():
@@ -37,7 +40,7 @@ def load_data(control):
     print("=" * 80)
 
     resumen = [
-        ["Tiempo de carga (ms)", dtime],
+        ["Tiempo de carga (ms)", round(dtime, 2)],
         ["Total registros", total],
         ["Año mínimo", min_year],
         ["Año máximo", max_year],
@@ -48,19 +51,28 @@ def load_data(control):
     print(tabulate(resumen, headers=["Campo", "Valor"], tablefmt="fancy_grid"))
 
     # -------- OS --------
-    print("\nSISTEMAS OPERATIVOS")
+    print("\n" + "=" * 80)
+    print("SISTEMAS OPERATIVOS")
+    print("=" * 80)
+
     rows_os = []
     for os_name in os_count:
         rows_os.append([os_name, os_count[os_name]])
 
     print(tabulate(rows_os, headers=["OS", "Cantidad"], tablefmt="fancy_grid"))
 
-    # -------- TOP 5 --------
-    print("\nTOP 5 MÁS CAROS")
+    # -------- TOP 5 CAROS --------
+    print("\n" + "=" * 80)
+    print("TOP 5 MÁS CAROS")
+    print("=" * 80)
+
     print(tabulate(top5, headers="keys", tablefmt="fancy_grid"))
 
-    # -------- BOTTOM 5 --------
-    print("\nTOP 5 MÁS BARATOS")
+    # -------- TOP 5 BARATOS --------
+    print("\n" + "=" * 80)
+    print("TOP 5 MÁS BARATOS")
+    print("=" * 80)
+
     print(tabulate(bottom5, headers="keys", tablefmt="fancy_grid"))
 
     return catalog
