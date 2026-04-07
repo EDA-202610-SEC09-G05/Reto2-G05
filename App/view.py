@@ -1,12 +1,14 @@
 import sys
-
+from tabulate import tabulate
+from DataStructures.List import array_list as al
+from DataStructures.Set import set as s
+from App import logic as l
 
 def new_logic():
     """
         Se crea una instancia del controlador
     """
-    #TODO: Llamar la función de la lógica donde se crean las estructuras de datos
-    pass
+    return l.new_logic()
 
 def print_menu():
     print("Bienvenido")
@@ -20,11 +22,48 @@ def print_menu():
     print("7- Salir")
 
 def load_data(control):
-    """
-    Carga los datos
-    """
-    #TODO: Realizar la carga de datos
-    pass
+    while True:
+        opcion = input("Ingrese el tamaño: 10, 20, 30, ..., 100: ")
+        if opcion.isdigit():
+            break
+        print("Valor inválido")
+
+    data = l.load_data(control, opcion)
+
+    catalog, dtime, total, os_count, min_year, max_year, min_precio, max_precio, top5, bottom5 = data
+
+    print("\n" + "=" * 80)
+    print("RESUMEN DE CARGA")
+    print("=" * 80)
+
+    resumen = [
+        ["Tiempo de carga (ms)", dtime],
+        ["Total registros", total],
+        ["Año mínimo", min_year],
+        ["Año máximo", max_year],
+        ["Precio mínimo", min_precio["price"]],
+        ["Precio máximo", max_precio["price"]]
+    ]
+
+    print(tabulate(resumen, headers=["Campo", "Valor"], tablefmt="fancy_grid"))
+
+    # -------- OS --------
+    print("\nSISTEMAS OPERATIVOS")
+    rows_os = []
+    for os_name in os_count:
+        rows_os.append([os_name, os_count[os_name]])
+
+    print(tabulate(rows_os, headers=["OS", "Cantidad"], tablefmt="fancy_grid"))
+
+    # -------- TOP 5 --------
+    print("\nTOP 5 MÁS CAROS")
+    print(tabulate(top5, headers="keys", tablefmt="fancy_grid"))
+
+    # -------- BOTTOM 5 --------
+    print("\nTOP 5 MÁS BARATOS")
+    print(tabulate(bottom5, headers="keys", tablefmt="fancy_grid"))
+
+    return catalog
 
 
 def print_data(control, id):
@@ -112,7 +151,7 @@ def main():
         elif int(inputs) == 5:
             print_req_5(control)
 
-        elif int(inputs) == 5:
+        elif int(inputs) == 6:
             print_req_6(control)
 
         elif int(inputs) == 7:
