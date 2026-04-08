@@ -44,54 +44,41 @@ def load_data(control):
     print("                 RESUMEN DE CARGA DE DATOS")
     print("=" * 80)
 
-    # Verificación de seguridad por si no hay datos
-    p_min = min_precio["price"] if min_precio else "N/A"
-    p_max = max_precio["price"] if max_precio else "N/A"
-
     resumen = [
-        ["Tiempo de carga (ms)", f"{round(dtime, 2)} ms"],
+        ["Tiempo de carga", f"{round(dtime, 2)} ms"],
         ["Total registros", f"{total:,}"],
         ["Año mínimo", min_year],
         ["Año máximo", max_year],
-        ["Precio mínimo", p_min],
-        ["Precio máximo", p_max]
+        ["Precio mínimo", f"${float(min_precio['price']):,.2f}"],
+        ["Precio máximo", f"${float(max_precio['price']):,.2f}"]
     ]
-
     print(tabulate(resumen, headers=["Campo", "Valor"], tablefmt="fancy_grid"))
 
-    # 2. SISTEMAS OPERATIVOS
-    print("\n" + "=" * 80)
-    print("           DISTRIBUCIÓN POR SISTEMA OPERATIVO")
-    print("=" * 80)
-
-    rows_os = []
-    for os_name in os_count:
-        rows_os.append([os_name, os_count[os_name]])
-
-    # Ordenar el conteo de OS por cantidad (opcional, pero se ve mejor)
-    rows_os.sort(key=lambda x: x[1], reverse=True)
-    print(tabulate(rows_os, headers=["OS", "Cantidad"], tablefmt="fancy_grid"))
-
-    # 3. TOP 5 MÁS CAROS
-    print("\n" + "=" * 80)
-    print("                 TOP 5 COMPUTADORES MÁS CAROS")
-    print("=" * 80)
+    # 2. TABLA DE LOS PRIMEROS 5 (TOP)
+    print("\nPrimeros cinco computadores cargados (en orden descendente por precio):")
     if top5:
         print(tabulate(top5, headers="keys", tablefmt="fancy_grid"))
     else:
-        print("No hay datos suficientes para mostrar el Top 5.")
+        print("No hay datos para mostrar.")
 
-    # 4. TOP 5 MÁS BARATOS
-    print("\n" + "=" * 80)
-    print("                TOP 5 COMPUTADORES MÁS BARATOS")
-    print("=" * 80)
+    # 3. TABLA DE LOS ÚLTIMOS 5 (BOTTOM)
+    print("\nÚltimos cinco computadores cargados (en orden descendente por precio):")
     if bottom5:
         print(tabulate(bottom5, headers="keys", tablefmt="fancy_grid"))
     else:
-        print("No hay datos suficientes para mostrar el Bottom 5.")
+        print("No hay datos para mostrar.")
+
+    # 4. DISTRIBUCIÓN OS
+    print("\nDISTRIBUCIÓN POR SISTEMA OPERATIVO")
+    rows_os = []
+    for os_name, count in os_count.items():
+        rows_os.append([os_name, count])
+    
+    # Ordenar por cantidad de mayor a menor
+    rows_os.sort(key=lambda x: x[1], reverse=True)
+    print(tabulate(rows_os, headers=["OS", "Cantidad"], tablefmt="fancy_grid"))
 
     return catalog
-
 
 def print_data(control, id):
     """
@@ -101,34 +88,33 @@ def print_data(control, id):
     pass
 
 def print_req_1(control):
-    """
-        Función que imprime la solución del Requerimiento 1 en consola
-    """
-    # TODO: Imprimir el resultado del requerimiento 1
-    pass
-
+    brand = input("Marca: ")
+    f_forma = input("Factor de forma: ")
+    tiempo, n, prom, resultados = l.req_1(control, brand, f_forma)
+    
+    print(f"\nResultados: {n} encontrados en {tiempo:.2f} ms")
+    print(f"Precio Promedio: ${prom:,.2f}")
+    
+    if n > 0:
+        # Convertimos la array_list de la lógica a una lista de Python para tabulate
+        tabla = []
+        for i in range(al.size(resultados)):
+            c = al.get_element(resultados, i)
+            tabla.append([c['brand'], c['model'], f"${float(c['price']):,.2f}"])
+        print(tabulate(tabla, headers=["Marca", "Modelo", "Precio"], tablefmt="fancy_grid"))
 
 def print_req_2(control):
-    """
-    Función que imprime la solución del Requerimiento 2 en consola.
-    Filtra equipos por núcleos y año, ordenados por peso.
-    """
     print("\n" + "=" * 80)
     print("      REQUERIMIENTO 2: EQUIPOS MÁS LIGEROS POR NÚCLEOS Y AÑO")
     print("=" * 80)
 
-    # 1. Entrada de datos
-    num_nucleos = input("Ingrese el número de núcleos (ej: 4, 8, 16): ")
-    anio_lanzamiento = input("Ingrese el año de lanzamiento (ej: 2022): ")
+    num_nucleos = input("Ingrese el número de núcleos: ")
+    anio_lanzamiento = input("Ingrese el año de lanzamiento: ")
 
-    print(f"\nBuscando equipos del año {anio_lanzamiento} con {num_nucleos} núcleos...")
-
-    # 2. Llamado a la lógica
-    # La función req_2 devuelve: (tiempo, total, promedio, resultados)
+    # Llamado a la lógica
     resultado_logica = l.req_2(control, num_nucleos, anio_lanzamiento)
     dtime, total, promedio_peso, lista_resultados = resultado_logica
 
-    # 3. Mostrar estadísticas básicas
     resumen_req = [
         ["Total encontrados", f"{total}"],
         ["Peso promedio", f"{promedio_peso} kg"],
@@ -136,29 +122,21 @@ def print_req_2(control):
     ]
     print(tabulate(resumen_req, tablefmt="fancy_grid"))
 
-    # 4. Mostrar tabla de resultados
     if total > 0:
-        print("\nLista de equipos encontrados:")
-        
-        # Si hay más de 20 resultados, la lógica ya nos dio los 10 primeros y 10 últimos
+        # Convertir array_list a lista de Python para que tabulate no sufra
+        resultados_py = []
+        for i in range(al.size(lista_resultados)):
+            resultados_py.append(al.get_element(lista_resultados, i))
+
         if total > 20:
-            print("10 más livianos ")
-            
-            # Dividimos visualmente para que el usuario note el salto
-            parte_1 = lista_resultados[:10]
-            parte_2 = lista_resultados[10:]
-            
-            print(tabulate(parte_1, headers="keys", tablefmt="fancy_grid"))
-            print("\n 10 más pesados\n")
-            print(tabulate(parte_2, headers="keys", tablefmt="fancy_grid"))
+            print("\n>>> Los 10 más livianos:")
+            print(tabulate(resultados_py[:10], headers="keys", tablefmt="fancy_grid"))
+            print("\n>>> Los 10 más pesados:")
+            print(tabulate(resultados_py[-10:], headers="keys", tablefmt="fancy_grid"))
         else:
-            # Si son 20 o menos, se imprimen todos de una vez
-            print(tabulate(lista_resultados, headers="keys", tablefmt="fancy_grid"))
+            print(tabulate(resultados_py, headers="keys", tablefmt="fancy_grid"))
     else:
-        print("\nNo se encontraron computadores con esos criterios.")
-
-    print("\n" + "=" * 80)
-
+        print("\nNo se encontraron resultados.")
 
 def print_req_3(control):
     """
@@ -168,12 +146,16 @@ def print_req_3(control):
     pass
 
 
-def print_req_4(control):
-    """
-        Función que imprime la solución del Requerimiento 4 en consola
-    """
-    # TODO: Imprimir el resultado del requerimiento 4
-    pass
+def print_req_4 (control):
+    cpu = input("Marca CPU: ")
+    gpu = input("Modelo GPU: ")
+    tiempo, cant, proms, tops = l.req_4(control, cpu, gpu)
+    
+    print(f"\nEncontrados: {cant} ({tiempo:.2f} ms)")
+    if cant > 0:
+        print(f"Promedio RAM: {proms['r']:.1f}GB | Precio: ${proms['p']:,.2f}")
+        print("\nMejores opciones (Top):")
+        print(tabulate(tops, headers="keys", tablefmt="fancy_grid"))
 
 
 def print_req_5(control):
