@@ -1,6 +1,7 @@
 import sys
 from tabulate import tabulate
 from DataStructures.List import array_list as al
+from DataStructures.Map import map_linear_probing as lp
 from DataStructures.Set import set as s
 from App import logic as l
 
@@ -71,11 +72,10 @@ def load_data(control):
     # 4. DISTRIBUCIÓN OS
     print("\nDISTRIBUCIÓN POR SISTEMA OPERATIVO")
     rows_os = []
-    for os_name, count in os_count.items():
-        rows_os.append([os_name, count])
+    for os_name in ["macOS","Windows","ChromeOS","Linux"]:
+        rows_os.append([os_name, lp.get(os_count, os_name)])
     
     # Ordenar por cantidad de mayor a menor
-    rows_os.sort(key=lambda x: x[1], reverse=True)
     print(tabulate(rows_os, headers=["OS", "Cantidad"], tablefmt="fancy_grid"))
 
     return catalog
@@ -88,20 +88,24 @@ def print_data(control, id):
     pass
 
 def print_req_1(control):
-    brand = input("Marca: ")
-    f_forma = input("Factor de forma: ")
-    tiempo, n, prom, resultados = l.req_1(control, brand, f_forma)
+    while True:
+        brand = input("Ingrese la marca: ").strip().lower()
+        form_factor = input("Ingrese el factor de forma: ").strip().lower()
+        if brand in control['brand'] and form_factor in control['form_factor']:
+            break
+        print("Marca o factor de forma no encontrada, vuelva a ingresar.\n")
     
-    print(f"\nResultados: {n} encontrados en {tiempo:.2f} ms")
-    print(f"Precio Promedio: ${prom:,.2f}")
-    
-    if n > 0:
-        # Convertimos la array_list de la lógica a una lista de Python para tabulate
-        tabla = []
-        for i in range(al.size(resultados)):
-            c = al.get_element(resultados, i)
-            tabla.append([c['brand'], c['model'], f"${float(c['price']):,.2f}"])
-        print(tabulate(tabla, headers=["Marca", "Modelo", "Precio"], tablefmt="fancy_grid"))
+    lista_resultado, lista_computadores = l.req_1(control, brand, form_factor)
+    print("\n" + "=" * 80)
+    print(f"RESULTADO REQUERIMIENTO 1 - Marca: {brand} | Factor de forma: {form_factor}")
+    print("=" * 80)
+    print(tabulate(lista_resultado, headers=["Campo", "Valor"], tablefmt="fancy_grid"))
+    print("\n" + "=" * 80)
+    print("COMPUTADORAS FILTRADAS")
+    print("=" * 80)
+    print(tabulate(lista_computadores, headers=["Computadora", "Detalles"], tablefmt="fancy_grid"))
+
+    return control
 
 def print_req_2(control):
     print("\n" + "=" * 80)
@@ -146,16 +150,28 @@ def print_req_3(control):
     pass
 
 
-def print_req_4 (control):
-    cpu = input("Marca CPU: ")
-    gpu = input("Modelo GPU: ")
-    tiempo, cant, proms, tops = l.req_4(control, cpu, gpu)
+def print_req_4(control):
+    """
+        Función que imprime la solución del Requerimiento 4 en consola
+    """
+    while True:
+        cpu_brand = input("Ingrese la marca del CPU: ").strip().lower()
+        gpu_model = input("Ingrese el modelo de GPU: ").strip().lower()
+        if gpu_model in control['gpu_model'] and cpu_brand in control['brandCPU']:
+            break
+        print("Modelo de GPU o marca de CPU no encontrado, vuelva a ingresar.\n")
+        
+    lista_resultado, lista_computadores = l.req_4(control, cpu_brand, gpu_model)
+    print("\n" + "=" * 80)
+    print(f"RESULTADO REQUERIMIENTO 4 - CPU: {cpu_brand} | GPU: {gpu_model}")
+    print("=" * 80)
+    print(tabulate(lista_resultado, headers=["Campo", "Valor"], tablefmt="fancy_grid", floatfmt=".2f"))
+    print("\n" + "=" * 80)
+    print("COMPUTADORAS MÁS CARAS")
+    print("=" * 80)
+    print(tabulate(lista_computadores, headers=["Computadora", "Detalles"], tablefmt="fancy_grid"))
     
-    print(f"\nEncontrados: {cant} ({tiempo:.2f} ms)")
-    if cant > 0:
-        print(f"Promedio RAM: {proms['r']:.1f}GB | Precio: ${proms['p']:,.2f}")
-        print("\nMejores opciones (Top):")
-        print(tabulate(tops, headers="keys", tablefmt="fancy_grid"))
+    return control
 
 
 def print_req_5(control):

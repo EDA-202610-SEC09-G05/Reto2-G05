@@ -7,10 +7,12 @@ csv.field_size_limit(2147483647)
 sys.setrecursionlimit(10000)
 
 from DataStructures.Map import map_separate_chaining as sc 
+from DataStructures.Map import map_linear_probing as lp 
 from DataStructures.List import array_list as al
 from DataStructures.List import single_linked_list as sl
 # Importa la función merge_sort desde tu archivo sort.py y dale el alias 'ms'
-from DataStructures.Sort.sort import merge_sort as ms
+from DataStructures.List.sort import merge_sort as ms
+from tabulate import tabulate
 
 
 def new_logic():
@@ -19,14 +21,62 @@ def new_logic():
     """
     return {
         "computer": al.new_list(),
-        "year": sc.new_map(500, 0.5),
+        "year": lp.new_map(500, 0.5),
         "brand": sc.new_map(500, 0.5),
-        "cpu_brand": sc.new_map(500, 0.5),
+        "cpu_brand": lp.new_map(500, 0.5),
         "gpu_model": sc.new_map(500, 0.5),
         "form_factor": sc.new_map(500, 0.5),
-        "os": sc.new_map(500, 0.5)
+        "os": lp.new_map(500, 0.5)
     }
-    
+
+def load_year(catalog, comp):
+    year = comp["release_year"]
+    years = catalog["year"]
+    if not lp.contains(years,year):
+        lp.put(years,year,al.new_list())
+    al.add_last(lp.get(years,year),comp)
+    pass
+
+def load_brand(catalog, comp):
+    brand = comp["brand"]
+    brands = catalog["brand"]
+    if not sc.contains(brands,brand):
+        sc.put(brands,brand,al.new_list())
+    al.add_last(sc.get(brands,brand),comp)
+    pass
+
+def load_cpu_brand(catalog, comp):
+    cpu_brand = comp["cpu_brand"]
+    cpu_brands = catalog["cpu_brand"]
+    if not lp.contains(cpu_brands,cpu_brand):
+        lp.put(cpu_brands,cpu_brand,al.new_list())
+    al.add_last(lp.get(cpu_brands,cpu_brand),comp)
+    pass
+
+def load_gpu_model(catalog, comp):
+    gpu_model = comp["gpu_model"]
+    gpu_models = catalog["gpu_model"]
+    if not sc.contains(gpu_models,gpu_model):
+        sc.put(gpu_models,gpu_model,al.new_list())
+    al.add_last(sc.get(gpu_models,gpu_model),comp)
+    pass
+
+def load_form_factor(catalog, comp):
+    form_factor = comp["form_factor"]
+    form_factors = catalog["form_factor"]
+    if not sc.contains(form_factors,form_factor):
+        sc.put(form_factors,form_factor,al.new_list())
+    al.add_last(sc.get(form_factors,form_factor),comp)
+    pass
+
+def load_os(catalog, comp):
+    os = comp["os"]
+    oss = catalog["os"]
+    if not lp.contains(oss,os):
+        lp.put(oss,os,al.new_list())
+    al.add_last(lp.get(oss,os),comp)
+    pass
+
 def criterio_precio_desc(comp):
     """Ordena por precio de mayor a menor."""
     return -float(comp["price"]), comp["model"]
@@ -39,6 +89,7 @@ def get_price(item):
     """Función de apoyo para ordenar sin usar lambda"""
     return float(item["price"])
 
+
 def load_data(catalog, size):
     """
     Carga de datos sin lambdas y con columnas filtradas para la tabla.
@@ -46,10 +97,10 @@ def load_data(catalog, size):
     inicio = get_time()
     url = f"./Data/computer_prices_{size}.csv"
     
-    max_p, min_p = {"price": 0}, {"price": 0}
+    max_p, min_p = None, None
     min_y, max_y = 9999, 0
-    total, os_count = 0, {}
-    lista_temp = []
+    total = 0
+    os_count = lp.new_map(10, 0.5)
 
     # 1. Lectura del archivo
     with open(url, encoding="utf-8") as f:
@@ -58,36 +109,38 @@ def load_data(catalog, size):
             # Guardamos en el catálogo original (ArrayList)
             al.add_last(catalog["computer"], comp)
             # Guardamos en lista temporal para los Tops
-            lista_temp.append(comp)
             total += 1
             
-            p_actual = float(comp["price"])
             y_actual = int(comp["release_year"])
             
             # Estadísticas básicas
-            if total == 1 or p_actual < float(min_p["price"]): min_p = comp
-            if total == 1 or p_actual > float(max_p["price"]): max_p = comp
+            if compare_comp2(comp, max_p): max_p = comp
+            if compare_comp(comp, min_p): min_p = comp
             if y_actual < min_y: min_y = y_actual
             if y_actual > max_y: max_y = y_actual
             
             # Conteo de OS
             os_name = comp["os"]
-            os_count[os_name] = os_count.get(os_name, 0) + 1
+            if not lp.contains(os_count,os_name):
+                lp.put(os_count, os_name, 0)
+            num = lp.get(os_count,os_name)
+            lp.put(os_count,os_name,num+1)
+            
+            load_brand(catalog, comp)
+            load_cpu_brand(catalog, comp)
+            load_form_factor(catalog, comp)
+            load_gpu_model(catalog, comp)
+            load_os(catalog, comp)
+            load_year(catalog, comp)
 
-    # 2. Ordenamiento usando la función de apoyo (SIN LAMBDA)
-    # Ordenamos de mayor a menor precio
-    lista_temp.sort(key=get_price, reverse=True)
+    prim5 = al.sub_list(catalog["computer"], 0, 5)
+    ult5 = al.sub_list(catalog["computer"], al.size(catalog["computer"])-5,5)
+    ms(prim5,compare_comp2,al)
+    ms(ult5,compare_comp2,al)
     
-    # 3. Construcción de TOP 5 (Primeros 5)
-    top5 = []
-    num_top = 5
-    if len(lista_temp) < 5:
-        num_top = len(lista_temp)
-        
-    for i in range(num_top):
-        c = lista_temp[i]
-        # Solo las columnas que se ven en tu terminal
-        top5.append({
+    print_first5 = []   
+    for c in prim5["elements"]:
+        print_first5.append({
             "brand": c["brand"],
             "model": c["model"],
             "device_type": c["device_type"],
@@ -99,15 +152,11 @@ def load_data(catalog, size):
         })
 
     # 4. Construcción de BOTTOM 5 (Últimos 5)
-    bottom5 = []
-    total_items = len(lista_temp)
-    inicio_bottom = total_items - 5
-    if inicio_bottom < 0:
-        inicio_bottom = 0
+    print_last5 = []
 
-    for i in range(inicio_bottom, total_items):
-        c = lista_temp[i]
-        bottom5.append({
+    for c in ult5["elements"]:
+
+        print_last5.append({
             "brand": c["brand"],
             "model": c["model"],
             "device_type": c["device_type"],
@@ -119,36 +168,67 @@ def load_data(catalog, size):
         })
     
     return (catalog, delta_time(inicio, get_time()), total, os_count, min_y, max_y, 
-            min_p, max_p, top5, bottom5)
+            min_p, max_p, print_first5, print_last5)
 
 
-def compare_req1(c1, c2):
+def compare_comp(c1, c2):
     """Descendente por precio. Empate: Ascendente por modelo."""
+    if c2 is None: return True 
+    p1, p2 = float(c1["price"]), float(c2["price"])
+    if p1 != p2:
+        return p1 < p2
+    return c1["model"] < c2["model"]
+
+def compare_comp2(c1, c2):
+    """Descendente por precio. Empate: Ascendente por modelo."""
+    if c2 is None: return True 
     p1, p2 = float(c1["price"]), float(c2["price"])
     if p1 != p2:
         return p1 > p2
     return c1["model"] < c2["model"]
 
-def req_1(control, brand, form_factor):
-    inicio = get_time()
-    l_brand = sc.get(control["brand"], brand.lower())
-    filtrados = al.new_list()
-    suma_precios = 0
+def req_1(catalog, brand, form_factor):
+    time_start = get_time()
+    sl_brands = sc.get(catalog["brand"],brand)
+    precios = 0
     
-    if l_brand:
-        actual = l_brand["first"]
-        while actual:
-            c = actual["info"]
-            if c["form_factor"].lower() == form_factor.lower():
-                al.add_last(filtrados, c)
-                suma_precios += float(c["price"])
-            actual = actual["next"]
+    comp_filter = al.new_list()
+    for comp in sl_brands["elements"]:
+        if comp["form_factor"].lower() == form_factor:
+            al.add_last(comp_filter, comp)
+            precios += float(comp["price"])
+    comp_filter = ms(comp_filter, compare_req2, al)
+    promedio_precios = precios / al.size(comp_filter) if al.size(comp_filter) > 0 else 0
+    total = al.size(comp_filter)
 
-    n = al.size(filtrados)
-    promedio = suma_precios / n if n > 0 else 0
-    ordenados = ms.sort(filtrados, compare_req1)
+    if comp_filter["size"] > 20:
+        lista1 = al.sub_list(comp_filter, 0, 10)
+        lista2 = al.sub_list(comp_filter, comp_filter["size"] - 10, 10)
+        lista1 = al.join_lists(lista1, lista2)
+    else:
+        lista1 = comp_filter
     
-    return delta_time(inicio, get_time()), n, round(promedio, 2), ordenados
+    lista_resultado = [
+        ["Tiempo de ejecución (ms)", delta_time(time_start, get_time())],
+        ["Total de computadoras", total],
+        ["Promedio de precios", promedio_precios]
+    ]
+    
+    lista_computadores = [
+        [
+            f"Computador {i+1}",
+            tabulate([
+                ['Tipo de dispositivo', comp["device_type"]],
+                ['Modelo', comp["model"]],
+                ['Sistema Operativo', comp["os"]],
+                ['Marca CPU', comp["cpu_brand"]],
+                ['RAM (GB)', comp["ram_gb"]],
+                ['Almacenamiento (GB)', comp["storage_gb"]],
+                ['Precio', comp["price"]]
+            ], tablefmt='grid')
+        ] for i, comp in enumerate(lista1["elements"])
+    ]
+    return lista_resultado, lista_computadores
 
 def compare_req2(c1, c2):
     """Ascendente por peso. Empate: Ascendente por modelo."""
@@ -159,22 +239,20 @@ def compare_req2(c1, c2):
 
 def req_2(catalog, num_nucleos, anio_lanzamiento):
     inicio = get_time()
-    l_anio = sc.get(catalog["year"], str(anio_lanzamiento))
+    l_anio = lp.get(catalog["year"], str(anio_lanzamiento))
     filtrados = al.new_list()
     suma_peso = 0
     
     if l_anio:
-        actual = l_anio["first"]
-        while actual:
-            c = actual["info"]
+        actual = l_anio["elements"]
+        for c in actual:
             if int(c["cpu_cores"]) == int(num_nucleos):
                 al.add_last(filtrados, c)
                 suma_peso += float(c["weight_kg"])
-            actual = actual["next"]
 
     n = al.size(filtrados)
     promedio = suma_peso / n if n > 0 else 0
-    ordenados = ms.sort(filtrados, compare_req2)
+    ordenados = ms(filtrados, compare_req2, al)
     
     return delta_time(inicio, get_time()), n, round(promedio, 2), ordenados
 
@@ -196,37 +274,69 @@ def compare_req4(c1, c2):
     return float(c1["weight_kg"]) < float(c2["weight_kg"])
 
 
-def req_4(catalog, cpu, gpu):
-    inicio = get_time()
-    l_gpu = sc.get(catalog["gpu_model"], gpu.lower())
-    count, precios, ram, vram, boost = 0, 0, 0, 0, 0
-    filtrados = al.new_list()
+def req_4(catalog, cpu_brand, gpu_model):
+    time_start = get_time()
+    count = 0
+    precios = 0
+    ram = 0
+    vram = 0
+    boost = 0
+    mayor_precio1 = None
+    mayor_precio2 = None
     
-    if l_gpu:
-        actual = l_gpu["first"]
-        while actual:
-            c = actual["info"]
-            if c["cpu_brand"].lower() == cpu.lower():
-                count += 1
-                precios += float(c["price"])
-                ram += int(c["ram_gb"])
-                vram += int(c["vram_gb"])
-                boost += float(c["cpu_boost_ghz"])
-                al.add_last(filtrados, c)
-            actual = actual["next"]
+    comps_gpu = sc.get(catalog["gpu_model"],gpu_model)
+    for comp in comps_gpu["elements"]:
+        if comp["cpu_brand"].lower() == cpu_brand:
+            count += 1
+            precios += float(comp["price"])
+            ram += int(comp["ram_gb"])
+            vram += int(comp["vram_gb"])
+            boost += float(comp["cpu_boost_ghz"])
+            
+            if compare_computers_w(comp, mayor_precio1):
+                mayor_precio2 = mayor_precio1
+                mayor_precio1 = comp
+            elif comp is not mayor_precio1 and compare_computers_w(comp, mayor_precio2):
+                mayor_precio2 = comp
                 
-    ordenados = ms.sort(filtrados, compare_req4)
-    tops = []
-    if count >= 1: tops.append(al.get_element(ordenados, 0))
-    if count >= 2: tops.append(al.get_element(ordenados, 1))
+    promedio_precios = precios / count if count > 0 else 0
+    promedio_ram = ram / count if count > 0 else 0
+    promedio_vram = vram / count if count > 0 else 0
+    promedio_boost = boost / count if count > 0 else 0
     
-    proms = {
-        "p": precios/count if count > 0 else 0, 
-        "r": ram/count if count > 0 else 0,
-        "v": vram/count if count > 0 else 0,
-        "b": boost/count if count > 0 else 0
-    }
-    return delta_time(inicio, get_time()), count, proms, tops
+    lista_resultado = [
+        ["Tiempo de ejecución (ms)", delta_time(time_start, get_time())],
+        ["Total de computadoras", count],
+        ["Promedio de precios", promedio_precios],
+        ["Promedio de VRAM (GB)", promedio_vram],
+        ["Promedio de RAM (GB)", promedio_ram],
+        ["Promedio de GPU Boost Clock (GHz)", promedio_boost]
+    ]
+    
+    lista_computadores = [
+        [
+            "Primer Computador mas Caro",
+            tabulate([
+                ['Modelo', mayor_precio1["model"] if mayor_precio1 else "N/A"],
+                ['Marca', mayor_precio1["brand"] if mayor_precio1 else "N/A"],
+                ['Año de Lanzamiento', mayor_precio1["release_year"] if mayor_precio1 else "N/A"],
+                ['Modelo CPU', mayor_precio1["cpu_model"] if mayor_precio1 else "N/A"],
+                ['Precio', mayor_precio1["price"] if mayor_precio1 else "N/A"]
+            ], tablefmt='grid')
+        ],
+        [
+            "Segundo Computador mas Caro",
+            tabulate([
+                ['Modelo', mayor_precio2["model"] if mayor_precio2 else "N/A"],
+                ['Marca', mayor_precio2["brand"] if mayor_precio2 else "N/A"],
+                ['Año de Lanzamiento', mayor_precio2["release_year"] if mayor_precio2 else "N/A"],
+                ['Modelo CPU', mayor_precio2["cpu_model"] if mayor_precio2 else "N/A"],
+                ['Precio', mayor_precio2["price"] if mayor_precio2 else "N/A"]
+            ], tablefmt='grid')
+        ]
+    ]
+
+    return lista_resultado, lista_computadores
 
 
 def req_5(catalog):
