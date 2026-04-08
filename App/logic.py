@@ -10,11 +10,6 @@ from DataStructures.Map import map_separate_chaining as sc
 from DataStructures.List import array_list as al
 from DataStructures.List import single_linked_list as sl
 
-def get_time():
-    return time.perf_counter() * 1000
-
-def delta_time(start, end):
-    return end - start
 
 def new_logic():
     """
@@ -185,26 +180,92 @@ def req_5(catalog):
     # TODO: Modificar el requerimiento 5
     pass
 
-def req_6(catalog):
+def criterio_eficiencia_desc(comp):
     """
-    Retorna el resultado del requerimiento 6
+    Criterio para el Req 6:
+    1. Puntaje de eficiencia de mayor a menor (por eso el negativo).
+    2. Precio de menor a mayor (en caso de empate).
     """
-    # TODO: Modificar el requerimiento 6
-    pass
+    return -float(comp["efficient_score"]), float(comp["price"])
+
+def req_6(catalog, n_top, form_factor, screen_type, year_min, year_max):
+    """
+    Requerimiento 6: Top N equipos por eficiencia energética.
+    CORREGIDO: Usa 'display_type' en lugar de 'screen_type'.
+    """
+    inicio = get_time()
+    
+    # Limpieza de entradas
+    form_factor = form_factor.strip().lower()
+    screen_type = screen_type.strip().lower()
+    
+    resultados_filtrados = []
+    count_windows = 0
+    count_linux = 0
+
+    size = al.size(catalog["computer"])
+    for i in range(size):
+        comp = al.get_element(catalog["computer"], i)
+        
+        # --- CAMBIO AQUÍ: Usamos 'display_type' que es el nombre real en tu CSV ---
+        f_forma = comp["form_factor"].lower()
+        t_pantalla = comp["display_type"].lower() 
+        anio = int(comp["release_year"])
+        
+        # Validación de filtros
+        if f_forma == form_factor and t_pantalla == screen_type:
+            if year_min <= anio <= year_max:
+                
+                # Cálculo de eficiencia
+                b_wh = float(comp["battery_wh"])
+                cpu_boost = float(comp["cpu_boost_ghz"])
+                c_watts = float(comp["charger_watts"])
+                
+                if c_watts > 0:
+                    score = (b_wh * cpu_boost) / c_watts
+                else:
+                    score = 0
+                
+                # Guardamos el score para ordenar
+                comp["efficient_score"] = round(score, 4)
+                resultados_filtrados.append(comp)
+                
+                # Conteos de OS
+                os_name = comp["os"].lower()
+                if "windows" in os_name:
+                    count_windows += 1
+                elif "linux" in os_name:
+                    count_linux += 1
+
+    # Ordenamiento (asegúrate de tener la función criterio_eficiencia_desc definida)
+    resultados_filtrados.sort(key=criterio_eficiencia_desc)
+
+    # Extraer el Top N
+    top_n = []
+    limite = min(int(n_top), len(resultados_filtrados))
+    for i in range(limite):
+        c = resultados_filtrados[i]
+        top_n.append({
+            "Modelo": c["model"],
+            "RAM": c["ram_gb"],
+            "CPU": c["cpu_model"],
+            "Boost GHz": c["cpu_boost_ghz"],
+            "Eficiencia": c["efficient_score"]
+        })
+
+    return {
+        "tiempo": delta_time(inicio, get_time()),
+        "total": len(resultados_filtrados),
+        "windows": count_windows,
+        "linux": count_linux,
+        "top": top_n
+    }
 
 
 # Funciones para medir tiempos de ejecucion
 
 def get_time():
-    """
-    devuelve el instante tiempo de procesamiento en milisegundos
-    """
-    return float(time.perf_counter()*1000)
-
+    return time.perf_counter() * 1000
 
 def delta_time(start, end):
-    """
-    devuelve la diferencia entre tiempos de procesamiento muestreados
-    """
-    elapsed = float(end - start)
-    return elapsed
+    return end - start

@@ -186,10 +186,54 @@ def print_req_5(control):
 
 def print_req_6(control):
     """
-        Función que imprime la solución del Requerimiento 6 en consola
+    Función que imprime la solución del Requerimiento 6 en consola.
+    Muestra el Top N de eficiencia energética con filtros de pantalla y forma.
     """
-    # TODO: Imprimir el resultado del requerimiento 6
-    pass
+    print("\n" + "=" * 80)
+    print("      REQUERIMIENTO 6: TOP N EQUIPOS CON MEJOR EFICIENCIA ENERGÉTICA")
+    print("=" * 80)
+
+    # 1. Captura de parámetros de entrada
+    try:
+        n_top = input("Ingrese el número de equipos a listar (N): ")
+        f_forma = input("Ingrese el Factor de forma (ej: Laptop, 2-in-1): ")
+        s_type = input("Ingrese el Tipo de pantalla (ej: IPS, OLED, LED): ")
+        
+        print("\n--- Rango de años ---")
+        y_min = int(input("Ingrese el año inicial: "))
+        y_max = int(input("Ingrese el año final: "))
+    except ValueError:
+        print("\nError: Los años y el valor N deben ser números enteros.")
+        return
+
+    print(f"\nProcesando eficiencia para {f_forma} con pantalla {s_type} ({y_min}-{y_max})...")
+
+    # 2. Llamado a la función de lógica
+    # res es el diccionario que retorna tu función req_6
+    res = l.req_6(control, n_top, f_forma, s_type, y_min, y_max)
+
+    # 3. Mostrar Resumen de la ejecución (según pide el PDF)
+    resumen_ejecucion = [
+        ["Tiempo de ejecución", f"{round(res['tiempo'], 2)} ms"],
+        ["Total equipos que cumplieron filtro", res["total"]],
+        ["Equipos con OS Windows", res["windows"]],
+        ["Equipos con OS Linux", res["linux"]]
+    ]
+    
+    print("\n" + tabulate(resumen_ejecucion, headers=["Concepto", "Valor"], tablefmt="fancy_grid"))
+
+    # 4. Mostrar el Top N de equipos
+    if len(res["top"]) > 0:
+        print(f"\nTOP {n_top} DE EQUIPOS CON MEJOR PUNTAJE DE EFICIENCIA:")
+        # Imprimimos la lista de diccionarios directamente con tabulate
+        print(tabulate(res["top"], headers="keys", tablefmt="fancy_grid"))
+        
+        print("\n* Puntaje calculado como: (Batería * CPU Boost) / Watts Cargador")
+        print("* En caso de empate en eficiencia, se ordena por precio (menor a mayor).")
+    else:
+        print("\nNo se encontraron computadores que cumplan con todos los filtros aplicados.")
+
+    print("\n" + "=" * 80)
 
 # Se crea la lógica asociado a la vista
 control = new_logic()
