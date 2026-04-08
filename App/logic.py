@@ -226,7 +226,7 @@ def load_os(catalog, comp):
     return catalog
 
 def req_1(control, brand, form_factor):
-     time_start = get_time()
+    time_start = get_time()
     sl_brands = catalog["brand"][brand]
     precios = 0
     
@@ -286,11 +286,69 @@ def req_3(catalog):
     pass
 
 
-def req_4(catalog):
-    """
-    Retorna el resultado del requerimiento 4
-    """
-    # TODO: Modificar el requerimiento 4
+def req_4(catalog, cpu_brand, gpu_model):
+    time_start = get_time()
+    count = 0
+    precios = 0
+    ram = 0
+    vram = 0
+    boost = 0
+    mayor_precio1 = None
+    mayor_precio2 = None
+    
+    comps_gpu = catalog["gpu_model"][gpu_model]
+    for comp in comps_gpu["elements"]:
+        if comp["cpu_brand"].lower() == cpu_brand:
+            count += 1
+            precios += float(comp["price"])
+            ram += int(comp["ram_gb"])
+            vram += int(comp["vram_gb"])
+            boost += float(comp["cpu_boost_ghz"])
+            
+            if compare_computers_w(comp, mayor_precio1):
+                mayor_precio2 = mayor_precio1
+                mayor_precio1 = comp
+            elif comp is not mayor_precio1 and compare_computers_w(comp, mayor_precio2):
+                mayor_precio2 = comp
+                
+    promedio_precios = precios / count if count > 0 else 0
+    promedio_ram = ram / count if count > 0 else 0
+    promedio_vram = vram / count if count > 0 else 0
+    promedio_boost = boost / count if count > 0 else 0
+    
+    lista_resultado = [
+        ["Tiempo de ejecución (ms)", delta_time(time_start, get_time())],
+        ["Total de computadoras", count],
+        ["Promedio de precios", promedio_precios],
+        ["Promedio de VRAM (GB)", promedio_vram],
+        ["Promedio de RAM (GB)", promedio_ram],
+        ["Promedio de GPU Boost Clock (GHz)", promedio_boost]
+    ]
+    
+    lista_computadores = [
+        [
+            "Primer Computador mas Caro",
+            tabulate([
+                ['Modelo', mayor_precio1["model"] if mayor_precio1 else "N/A"],
+                ['Marca', mayor_precio1["brand"] if mayor_precio1 else "N/A"],
+                ['Año de Lanzamiento', mayor_precio1["release_year"] if mayor_precio1 else "N/A"],
+                ['Modelo CPU', mayor_precio1["cpu_model"] if mayor_precio1 else "N/A"],
+                ['Precio', mayor_precio1["price"] if mayor_precio1 else "N/A"]
+            ], tablefmt='grid')
+        ],
+        [
+            "Segundo Computador mas Caro",
+            tabulate([
+                ['Modelo', mayor_precio2["model"] if mayor_precio2 else "N/A"],
+                ['Marca', mayor_precio2["brand"] if mayor_precio2 else "N/A"],
+                ['Año de Lanzamiento', mayor_precio2["release_year"] if mayor_precio2 else "N/A"],
+                ['Modelo CPU', mayor_precio2["cpu_model"] if mayor_precio2 else "N/A"],
+                ['Precio', mayor_precio2["price"] if mayor_precio2 else "N/A"]
+            ], tablefmt='grid')
+        ]
+    ]
+
+    return lista_resultado, lista_computadores
     pass
 
 

@@ -101,10 +101,26 @@ def print_data(control, id):
     pass
 
 def print_req_1(control):
-    """
-        Función que imprime la solución del Requerimiento 1 en consola
-    """
-    # TODO: Imprimir el resultado del requerimiento 1
+    
+     while True:
+        brand = input("Ingrese la marca: ").strip().lower()
+        form_factor = input("Ingrese el factor de forma: ").strip().lower()
+        if brand in control['brand'] and form_factor in control['form_factor']:
+            break
+        print("Marca o factor de forma no encontrada, vuelva a ingresar.\n")
+    
+    lista_resultado, lista_computadores = l.req_1(control, brand, form_factor)
+    print("\n" + "=" * 80)
+    print(f"RESULTADO REQUERIMIENTO 1 - Marca: {brand} | Factor de forma: {form_factor}")
+    print("=" * 80)
+    print(tabulate(lista_resultado, headers=["Campo", "Valor"], tablefmt="fancy_grid"))
+    print("\n" + "=" * 80)
+    print("COMPUTADORAS FILTRADAS")
+    print("=" * 80)
+    print(tabulate(lista_computadores, headers=["Computadora", "Detalles"], tablefmt="fancy_grid"))
+
+    return control
+
     pass
 
 
@@ -172,7 +188,25 @@ def print_req_4(control):
     """
         Función que imprime la solución del Requerimiento 4 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 4
+    while True:
+        cpu_brand = input("Ingrese la marca del CPU: ").strip().lower()
+        gpu_model = input("Ingrese el modelo de GPU: ").strip().lower()
+        if gpu_model in control['gpu_model'] and cpu_brand in control['brandCPU']:
+            break
+        print("Modelo de GPU o marca de CPU no encontrado, vuelva a ingresar.\n")
+        
+    lista_resultado, lista_computadores = l.req_4(control, cpu_brand, gpu_model)
+    print("\n" + "=" * 80)
+    print(f"RESULTADO REQUERIMIENTO 4 - CPU: {cpu_brand} | GPU: {gpu_model}")
+    print("=" * 80)
+    print(tabulate(lista_resultado, headers=["Campo", "Valor"], tablefmt="fancy_grid", floatfmt=".2f"))
+    print("\n" + "=" * 80)
+    print("COMPUTADORAS MÁS CARAS")
+    print("=" * 80)
+    print(tabulate(lista_computadores, headers=["Computadora", "Detalles"], tablefmt="fancy_grid"))
+    
+    return control
+
     pass
 
 
