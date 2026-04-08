@@ -22,58 +22,73 @@ def print_menu():
     print("7- Salir")
 
 def load_data(control):
-    from tabulate import tabulate
-    from App import logic as l
-
+    """
+    Gestiona la carga de datos y muestra los resultados estadísticos.
+    """
     while True:
-        opcion = input("Ingrese el tamaño: 10, 20, 30, ..., 100: ")
+        opcion = input("\nIngrese el tamaño de la muestra (ej: 10, 20, 100): ")
         if opcion.isdigit():
             break
-        print("Valor inválido")
+        print("Error: Por favor ingrese un número válido.")
 
+    print("\nCargando información de los archivos... por favor espere.")
+    
+    # Llamado a la lógica optimizada
     data = l.load_data(control, opcion)
 
-    catalog, dtime, total, os_count, min_year, max_year, min_precio, max_precio, top5, bottom5 = data
+    (catalog, dtime, total, os_count, min_year, max_year, 
+     min_precio, max_precio, top5, bottom5) = data
 
+    # 1. RESUMEN DE CARGA
     print("\n" + "=" * 80)
-    print("RESUMEN DE CARGA")
+    print("                 RESUMEN DE CARGA DE DATOS")
     print("=" * 80)
 
+    # Verificación de seguridad por si no hay datos
+    p_min = min_precio["price"] if min_precio else "N/A"
+    p_max = max_precio["price"] if max_precio else "N/A"
+
     resumen = [
-        ["Tiempo de carga (ms)", round(dtime, 2)],
-        ["Total registros", total],
+        ["Tiempo de carga (ms)", f"{round(dtime, 2)} ms"],
+        ["Total registros", f"{total:,}"],
         ["Año mínimo", min_year],
         ["Año máximo", max_year],
-        ["Precio mínimo", min_precio["price"]],
-        ["Precio máximo", max_precio["price"]]
+        ["Precio mínimo", p_min],
+        ["Precio máximo", p_max]
     ]
 
     print(tabulate(resumen, headers=["Campo", "Valor"], tablefmt="fancy_grid"))
 
-    # -------- OS --------
+    # 2. SISTEMAS OPERATIVOS
     print("\n" + "=" * 80)
-    print("SISTEMAS OPERATIVOS")
+    print("           DISTRIBUCIÓN POR SISTEMA OPERATIVO")
     print("=" * 80)
 
     rows_os = []
     for os_name in os_count:
         rows_os.append([os_name, os_count[os_name]])
 
+    # Ordenar el conteo de OS por cantidad (opcional, pero se ve mejor)
+    rows_os.sort(key=lambda x: x[1], reverse=True)
     print(tabulate(rows_os, headers=["OS", "Cantidad"], tablefmt="fancy_grid"))
 
-    # -------- TOP 5 CAROS --------
+    # 3. TOP 5 MÁS CAROS
     print("\n" + "=" * 80)
-    print("TOP 5 MÁS CAROS")
+    print("                 TOP 5 COMPUTADORES MÁS CAROS")
     print("=" * 80)
+    if top5:
+        print(tabulate(top5, headers="keys", tablefmt="fancy_grid"))
+    else:
+        print("No hay datos suficientes para mostrar el Top 5.")
 
-    print(tabulate(list(top5), headers="keys", tablefmt="fancy_grid"))
-
-    # -------- TOP 5 BARATOS --------
+    # 4. TOP 5 MÁS BARATOS
     print("\n" + "=" * 80)
-    print("TOP 5 MÁS BARATOS")
+    print("                TOP 5 COMPUTADORES MÁS BARATOS")
     print("=" * 80)
-
-    print(tabulate(bottom5, headers="keys", tablefmt="fancy_grid"))
+    if bottom5:
+        print(tabulate(bottom5, headers="keys", tablefmt="fancy_grid"))
+    else:
+        print("No hay datos suficientes para mostrar el Bottom 5.")
 
     return catalog
 

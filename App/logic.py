@@ -5,9 +5,15 @@ from DataStructures.List import single_linked_list as sl
 from DataStructures.List import list_node as n
 from DataStructures.Set import set as s
 
+def get_time():
+    return time.perf_counter() * 1000
+
+def delta_time(start, end):
+    return end - start
+
 def new_logic():
     """
-    Crea el catalogo para almacenar las estructuras de datos
+    Crea el catálogo con las estructuras de datos vacías.
     """
     catalog = {
         "computer": al.new_list(),
@@ -22,89 +28,18 @@ def new_logic():
     }
     return catalog
 
-
-# Funciones para la carga de datos
-
-def load_data(catalog, size):
+def criterio_orden(comp):
     """
-    Carga los datos del reto
+    Criterio de ordenamiento sin lambda:
+    1. Precio descendente.
+    2. Modelo ascendente en caso de empate.
     """
-    inicio = get_time()
-    url = f"./Data/computer_prices_{size}.csv"
-
-    max_precio = {"price": float("-inf")}
-    min_precio = {"price": float("inf")}
-    min_year = float("inf")
-    max_year = float("-inf")
-
-    total = 0
-    os_count = {}
-
-    lista_temp = []
-
-    with open(url, encoding="utf-8") as f:
-        filas = csv.DictReader(f)
-
-        for comp in filas:
-            al.add_last(catalog["computer"], comp)
-            lista_temp.append(comp)
-            total += 1
-
-            # tus cargas
-            load_brands(catalog, comp)
-            load_years(catalog, comp)
-            load_brands_cpu(catalog, comp)
-            load_brands_gpu(catalog, comp)
-            load_resolutions(catalog, comp)
-
-            load_gpu_model(catalog, comp)
-            load_form_factor(catalog, comp)
-            load_os(catalog, comp)
-
-            price = float(comp["price"])
-            year = int(comp["release_year"])
-
-            if price < float(min_precio["price"]):
-                min_precio = comp
-            if price > float(max_precio["price"]):
-                max_precio = comp
-
-            if year < min_year:
-                min_year = year
-            if year > max_year:
-                max_year = year
-
-            os_name = comp["os"]
-            if os_name not in os_count:
-                os_count[os_name] = 0
-            os_count[os_name] += 1
-
-    lista_temp = sort_computers(lista_temp)
-
-    # -------- TOP 5 --------
-    top5 = []
-    i = 0
-
-    while i < 5 and i < len(lista_temp):
-        top5.append(format_output(lista_temp[i]))
-        i += 1
-
-    # -------- BOTTOM 5 --------
-    # -------- BOTTOM 5 --------
-    bottom5 = []
-    i = len(lista_temp) - 1
-    count = 0
-
-    while count < 5 and i >= 0:
-        bottom5.insert(0, format_output(lista_temp[i]))  
-        i -= 1
-        count += 1
-
-    dtime = delta_time(inicio, get_time())
-
-    return catalog, dtime, total, os_count, min_year, max_year, min_precio, max_precio, top5, bottom5
+    return -float(comp["price"]), comp["model"]
 
 def format_output(comp):
+    """
+    Formatea el diccionario para la presentación en tablas.
+    """
     return {
         "brand": comp["brand"],
         "model": comp["model"],
@@ -115,115 +50,104 @@ def format_output(comp):
         "release_year": comp["release_year"],
         "price": comp["price"]
     }
-    
-def sort_computers(lista):
-    size = len(lista)
 
-    for i in range(1, size):
-        actual = lista[i]
-        j = i - 1
-
-        while j >= 0 and compare_computers(actual, lista[j]):
-            lista[j + 1] = lista[j]
-            j -= 1
-
-        lista[j + 1] = actual
-
-    return lista
-
-def compare_computers(c1, c2):
+def load_data(catalog, size):
     """
-    Retorna True si c1 debe ir antes que c2
-    Orden:
-    1. Precio DESC
-    2. Modelo ASC
+    Carga de datos ultra eficiente (artesanal).
     """
-    price1 = float(c1["price"])
-    price2 = float(c2["price"])
-    # mayor precio primero
-    if price1 > price2:
-        return True
-    if price1 < price2:
-        return False
-    # empate 
-    if c1["model"] < c2["model"]:
-        return True
-    else:
-        return False
+    inicio = get_time()
+    url = f"./Data/computer_prices_{size}.csv"
+
+    # Variables de resumen inicializadas
+    max_precio = {"price": float("-inf")}
+    min_precio = {"price": float("inf")}
+    min_year = float("inf")
+    max_year = float("-inf")
+    total = 0
+    os_count = {}
+    lista_temp = []
+
+    # Referencias locales para evitar búsquedas repetitivas en el catálogo
+    cat_comp = catalog["computer"]
+    cat_brand = catalog["brand"]
+    cat_year = catalog["year"]
+    cat_bcpu = catalog["brandCPU"]
+    cat_bgpu = catalog["brandGPU"]
+    cat_res = catalog["resolution"]
+    cat_gmod = catalog["gpu_model"]
+    cat_form = catalog["form_factor"]
+    cat_os = catalog["os"]
+
+    with open(url, encoding="utf-8") as f:
+        filas = csv.DictReader(f)
+        for comp in filas:
+            # 1. Almacenamiento base
+            al.add_last(cat_comp, comp)
+            lista_temp.append(comp)
+            total += 1
+
+            # 2. Conversiones únicas y estadísticas
+            current_price = float(comp["price"])
+            current_year = int(comp["release_year"])
+
+            if current_price < float(min_precio["price"]): min_precio = comp
+            if current_price > float(max_precio["price"]): max_precio = comp
+            if current_year < min_year: min_year = current_year
+            if current_year > max_year: max_year = current_year
+
+            # 3. Conteo de Sistemas Operativos
+            os_name = comp["os"]
+            os_count[os_name] = os_count.get(os_name, 0) + 1
+
+            # 4. CARGAS ARTESANALES (Directas en estructuras)
+            # Marcas
+            b_name = comp["brand"].lower()
+            if b_name not in cat_brand: cat_brand[b_name] = sl.new_list()
+            sl.add_last(cat_brand[b_name], comp)
+            
+            # Años
+            y_val = comp["release_year"]
+            if y_val not in cat_year: cat_year[y_val] = sl.new_list()
+            sl.add_last(cat_year[y_val], comp)
+            
+            # CPU
+            bc_name = comp["cpu_brand"].lower()
+            if bc_name not in cat_bcpu: cat_bcpu[bc_name] = al.new_list()
+            al.add_last(cat_bcpu[bc_name], comp)
+            
+            # Sets (GPU Brand y Resolution)
+            s.add_element(cat_bgpu, comp["gpu_brand"].lower())
+            s.add_element(cat_res, comp["resolution"])
+            
+            # Resto de estructuras (GPU Model, Form Factor, OS)
+            # OS se procesa sin .lower() para mantener consistencia con os_count
+            for key, target_map in [("gpu_model", cat_gmod), ("form_factor", cat_form), ("os", cat_os)]:
+                val = comp[key].lower() if key != "os" else comp[key]
+                if val not in target_map: target_map[val] = sl.new_list()
+                sl.add_last(target_map[val], comp)
+
+    # --- ORDENAMIENTO EFICIENTE ---
+    lista_temp.sort(key=criterio_orden)
+
+    # --- TOP 5 Y BOTTOM 5 ---
+    top5 = []
+    n_records = len(lista_temp)
+    for i in range(min(5, n_records)):
+        top5.append(format_output(lista_temp[i]))
     
-def load_brands(catalog, comp):
-    brands = catalog["brand"]
-    brand = comp["brand"].lower()
+    bottom5 = []
+    idx_inicio_bottom = max(0, n_records - 5)
+    # Recorremos de atrás hacia adelante para que el más barato sea el primero del bottom
+    for i in range(n_records - 1, idx_inicio_bottom - 1, -1):
+        bottom5.append(format_output(lista_temp[i]))
 
-    if brand not in brands:
-        brands[brand] = sl.new_list()
-    sl.add_last(brands[brand], comp)
-    return catalog
+    dtime = delta_time(inicio, get_time())
+    
+    return (catalog, dtime, total, os_count, min_year, max_year, 
+            min_precio, max_precio, top5, bottom5)
+    
 
-
-def load_years(catalog, comp):
-    years = catalog["year"]
-    year = comp["release_year"]
-
-    if year not in years:
-        years[year] = sl.new_list()
-    sl.add_last(years[year], comp)
-    return catalog
-
-
-def load_brands_cpu(catalog, comp):
-    brands = catalog["brandCPU"]
-    brand = comp["cpu_brand"].lower()
-
-    if brand not in brands:
-        brands[brand] = al.new_list()
-    al.add_last(brands[brand], comp)
-    return catalog
-
-def load_brands_gpu(catalog, comp):
-    # si quieres mantener set como en reto 1
-    # asegúrate de tener "brandGPU" en new_logic
-    if "brandGPU" not in catalog:
-        catalog["brandGPU"] = s.new_set()
-
-    brand = comp["gpu_brand"].lower()
-    s.add_element(catalog["brandGPU"], brand)
-    return catalog
-
-
-def load_resolutions(catalog, comp):
-    if "resolution" not in catalog:
-        catalog["resolution"] = s.new_set()
-
-    resolution = comp["resolution"]
-    s.add_element(catalog["resolution"], resolution)
-    return catalog
-
-def load_gpu_model(catalog, comp):
-    gpu = comp["gpu_model"].lower()
-
-    if gpu not in catalog["gpu_model"]:
-        catalog["gpu_model"][gpu] = sl.new_list()
-    sl.add_last(catalog["gpu_model"][gpu], comp)
-    return catalog
-
-
-def load_form_factor(catalog, comp):
-    form = comp["form_factor"].lower()
-
-    if form not in catalog["form_factor"]:
-        catalog["form_factor"][form] = sl.new_list()
-    sl.add_last(catalog["form_factor"][form], comp)
-    return catalog
-
-
-def load_os(catalog, comp):
-    os_name = comp["os"]
-
-    if os_name not in catalog["os"]:
-        catalog["os"][os_name] = sl.new_list()
-    sl.add_last(catalog["os"][os_name], comp)
-    return catalog
+    
 
 def req_1(catalog):
     """
