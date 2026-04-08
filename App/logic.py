@@ -1,9 +1,14 @@
 import time
 import csv
+import sys
+
+# Configuración obligatoria PDF pág. 11
+csv.field_size_limit(2147483647)
+sys.setrecursionlimit(10000)
+
+from DataStructures.Map import map_separate_chaining as sc 
 from DataStructures.List import array_list as al
 from DataStructures.List import single_linked_list as sl
-from DataStructures.List import list_node as n
-from DataStructures.Set import set as s
 
 def get_time():
     return time.perf_counter() * 1000
@@ -13,141 +18,87 @@ def delta_time(start, end):
 
 def new_logic():
     """
-    Crea el catálogo con las estructuras de datos vacías.
-    """
-    catalog = {
-        "computer": al.new_list(),
-        "brandCPU": {},
-        "year": {},
-        "brand": {},
-        "gpu_model": {},
-        "form_factor": {},
-        "os": {},
-        "brandGPU": s.new_set(),
-        "resolution": s.new_set()
-    }
-    return catalog
-
-def criterio_orden(comp):
-    """
-    Criterio de ordenamiento sin lambda:
-    1. Precio descendente.
-    2. Modelo ascendente en caso de empate.
-    """
-    return -float(comp["price"]), comp["model"]
-
-def format_output(comp):
-    """
-    Formatea el diccionario para la presentación en tablas.
+    Crea el catálogo inicial con tus estructuras de Mapas.
     """
     return {
-        "brand": comp["brand"],
-        "model": comp["model"],
-        "device_type": comp["device_type"],
-        "cpu_model": comp["cpu_model"],
-        "ram_gb": comp["ram_gb"],
-        "storage_capacity": comp["storage_gb"],
-        "release_year": comp["release_year"],
-        "price": comp["price"]
+        "computer": al.new_list(),
+        "year": sc.new_map(500, 0.5),
+        "brand": sc.new_map(500, 0.5),
+        "brandCPU": sc.new_map(500, 0.5),
+        "gpu_model": sc.new_map(500, 0.5),
+        "form_factor": sc.new_map(500, 0.5),
+        "os": sc.new_map(500, 0.5)
     }
+    
+def criterio_precio_desc(comp):
+    """Ordena por precio de mayor a menor."""
+    return -float(comp["price"]), comp["model"]
+
+def criterio_peso_asc(comp):
+    """Ordena por peso de menor a mayor."""
+    return float(comp["weight_kg"]), comp["model"]
 
 def load_data(catalog, size):
-    """
-    Carga de datos ultra eficiente (artesanal).
-    """
+    """Carga datos, llena los mapas y genera estadísticas."""
     inicio = get_time()
     url = f"./Data/computer_prices_{size}.csv"
 
-    # Variables de resumen inicializadas
     max_precio = {"price": float("-inf")}
     min_precio = {"price": float("inf")}
-    min_year = float("inf")
-    max_year = float("-inf")
+    min_year, max_year = float("inf"), float("-inf")
     total = 0
-    os_count = {}
+    os_count = {} 
     lista_temp = []
-
-    # Referencias locales para evitar búsquedas repetitivas en el catálogo
-    cat_comp = catalog["computer"]
-    cat_brand = catalog["brand"]
-    cat_year = catalog["year"]
-    cat_bcpu = catalog["brandCPU"]
-    cat_bgpu = catalog["brandGPU"]
-    cat_res = catalog["resolution"]
-    cat_gmod = catalog["gpu_model"]
-    cat_form = catalog["form_factor"]
-    cat_os = catalog["os"]
 
     with open(url, encoding="utf-8") as f:
         filas = csv.DictReader(f)
         for comp in filas:
-            # 1. Almacenamiento base
-            al.add_last(cat_comp, comp)
+            al.add_last(catalog["computer"], comp)
             lista_temp.append(comp)
             total += 1
 
-            # 2. Conversiones únicas y estadísticas
-            current_price = float(comp["price"])
-            current_year = int(comp["release_year"])
+            # Estadísticas
+            p_actual = float(comp["price"])
+            y_actual = int(comp["release_year"])
+            if p_actual < float(min_precio["price"]): min_precio = comp
+            if p_actual > float(max_precio["price"]): max_precio = comp
+            if y_actual < min_year: min_year = y_actual
+            if y_actual > max_year: max_year = y_actual
 
-            if current_price < float(min_precio["price"]): min_precio = comp
-            if current_price > float(max_precio["price"]): max_precio = comp
-            if current_year < min_year: min_year = current_year
-            if current_year > max_year: max_year = current_year
-
-            # 3. Conteo de Sistemas Operativos
+            # Conteo OS
             os_name = comp["os"]
             os_count[os_name] = os_count.get(os_name, 0) + 1
 
-            # 4. CARGAS ARTESANALES (Directas en estructuras)
-            # Marcas
-            b_name = comp["brand"].lower()
-            if b_name not in cat_brand: cat_brand[b_name] = sl.new_list()
-            sl.add_last(cat_brand[b_name], comp)
-            
-            # Años
-            y_val = comp["release_year"]
-            if y_val not in cat_year: cat_year[y_val] = sl.new_list()
-            sl.add_last(cat_year[y_val], comp)
-            
-            # CPU
-            bc_name = comp["cpu_brand"].lower()
-            if bc_name not in cat_bcpu: cat_bcpu[bc_name] = al.new_list()
-            al.add_last(cat_bcpu[bc_name], comp)
-            
-            # Sets (GPU Brand y Resolution)
-            s.add_element(cat_bgpu, comp["gpu_brand"].lower())
-            s.add_element(cat_res, comp["resolution"])
-            
-            # Resto de estructuras (GPU Model, Form Factor, OS)
-            # OS se procesa sin .lower() para mantener consistencia con os_count
-            for key, target_map in [("gpu_model", cat_gmod), ("form_factor", cat_form), ("os", cat_os)]:
-                val = comp[key].lower() if key != "os" else comp[key]
-                if val not in target_map: target_map[val] = sl.new_list()
-                sl.add_last(target_map[val], comp)
+            # Llenar Mapas (Separate Chaining)
+            y_key = comp["release_year"]
+            lista_y = sc.get(catalog["year"], y_key)
+            if lista_y is None:
+                lista_y = sl.new_list()
+                sc.put(catalog["year"], y_key, lista_y)
+            sl.add_last(lista_y, comp)
 
-    # --- ORDENAMIENTO EFICIENTE ---
-    lista_temp.sort(key=criterio_orden)
+            b_key = comp["brand"].lower()
+            lista_b = sc.get(catalog["brand"], b_key)
+            if lista_b is None:
+                lista_b = sl.new_list()
+                sc.put(catalog["brand"], b_key, lista_b)
+            sl.add_last(lista_b, comp)
 
-    # --- TOP 5 Y BOTTOM 5 ---
+    # Ordenar lista temporal para Tops (Sin lambda)
+    lista_temp.sort(key=criterio_precio_desc)
+    
     top5 = []
-    n_records = len(lista_temp)
-    for i in range(min(5, n_records)):
-        top5.append(format_output(lista_temp[i]))
-    
+    for i in range(min(5, total)):
+        c = lista_temp[i]
+        top5.append({"brand": c["brand"], "model": c["model"], "price": c["price"]})
+        
     bottom5 = []
-    idx_inicio_bottom = max(0, n_records - 5)
-    # Recorremos de atrás hacia adelante para que el más barato sea el primero del bottom
-    for i in range(n_records - 1, idx_inicio_bottom - 1, -1):
-        bottom5.append(format_output(lista_temp[i]))
+    for i in range(total - 1, max(-1, total - 6), -1):
+        c = lista_temp[i]
+        bottom5.append({"brand": c["brand"], "model": c["model"], "price": c["price"]})
 
-    dtime = delta_time(inicio, get_time())
-    
-    return (catalog, dtime, total, os_count, min_year, max_year, 
+    return (catalog, delta_time(inicio, get_time()), total, os_count, min_year, max_year, 
             min_precio, max_precio, top5, bottom5)
-    
-
-    
 
 def req_1(catalog):
     """
@@ -157,12 +108,58 @@ def req_1(catalog):
     pass
 
 
-def req_2(catalog):
-    """
-    Retorna el resultado del requerimiento 2
-    """
-    # TODO: Modificar el requerimiento 2
-    pass
+
+def req_2(catalog, num_nucleos, anio_lanzamiento):
+    """Requerimiento 2: Filtrado eficiente por mapa y ordenado por peso."""
+    inicio = get_time()
+    
+    # 1. Búsqueda en Mapa (Uso de tus estructuras)
+    # Devuelve la lista enlazada guardada para ese año
+    lista_equipos = sc.get(catalog["year"], str(anio_lanzamiento))
+    
+    resultados_filtrados = []
+    if lista_equipos is not None:
+        # IMPORTANTE: Revisa si tu nodo usa 'info' o 'value'
+        actual = lista_equipos["first"] 
+        while actual is not None:
+            comp = actual["info"] 
+            if int(comp["cpu_cores"]) == int(num_nucleos):
+                resultados_filtrados.append(comp)
+            actual = actual["next"]
+
+    # 2. Ordenar por peso (Sin lambda)
+    resultados_filtrados.sort(key=criterio_peso_asc)
+
+    # 3. Cálculos
+    n = len(resultados_filtrados)
+    total_peso = 0
+    for c in resultados_filtrados:
+        total_peso += float(c["weight_kg"])
+    promedio_peso = (total_peso / n) if n > 0 else 0
+
+    # 4. Formateo y Regla de 20 elementos
+    lista_final = []
+    if n > 0:
+        indices = []
+        if n > 20:
+            for i in range(10): indices.append(i)
+            for i in range(n - 10, n): indices.append(i)
+        else:
+            for i in range(n): indices.append(i)
+
+        for idx in indices:
+            c = resultados_filtrados[idx]
+            lista_final.append({
+                "Tipo": c["device_type"],
+                "Modelo": c["model"],
+                "OS": c["os"],
+                "CPU Brand": c["cpu_brand"],
+                "RAM": c["ram_gb"],
+                "Storage": c["storage_gb"],
+                "Peso": c["weight_kg"]
+            })
+
+    return delta_time(inicio, get_time()), n, round(promedio_peso, 2), lista_final
 
 
 def req_3(catalog):

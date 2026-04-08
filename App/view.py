@@ -31,7 +31,7 @@ def load_data(control):
             break
         print("Error: Por favor ingrese un número válido.")
 
-    print("\nCargando información de los archivos... por favor espere.")
+    print("\nCargando información de los archivos... ")
     
     # Llamado a la lógica optimizada
     data = l.load_data(control, opcion)
@@ -110,10 +110,54 @@ def print_req_1(control):
 
 def print_req_2(control):
     """
-        Función que imprime la solución del Requerimiento 2 en consola
+    Función que imprime la solución del Requerimiento 2 en consola.
+    Filtra equipos por núcleos y año, ordenados por peso.
     """
-    # TODO: Imprimir el resultado del requerimiento 2
-    pass
+    print("\n" + "=" * 80)
+    print("      REQUERIMIENTO 2: EQUIPOS MÁS LIGEROS POR NÚCLEOS Y AÑO")
+    print("=" * 80)
+
+    # 1. Entrada de datos
+    num_nucleos = input("Ingrese el número de núcleos (ej: 4, 8, 16): ")
+    anio_lanzamiento = input("Ingrese el año de lanzamiento (ej: 2022): ")
+
+    print(f"\nBuscando equipos del año {anio_lanzamiento} con {num_nucleos} núcleos...")
+
+    # 2. Llamado a la lógica
+    # La función req_2 devuelve: (tiempo, total, promedio, resultados)
+    resultado_logica = l.req_2(control, num_nucleos, anio_lanzamiento)
+    dtime, total, promedio_peso, lista_resultados = resultado_logica
+
+    # 3. Mostrar estadísticas básicas
+    resumen_req = [
+        ["Total encontrados", f"{total}"],
+        ["Peso promedio", f"{promedio_peso} kg"],
+        ["Tiempo de ejecución", f"{round(dtime, 2)} ms"]
+    ]
+    print(tabulate(resumen_req, tablefmt="fancy_grid"))
+
+    # 4. Mostrar tabla de resultados
+    if total > 0:
+        print("\nLista de equipos encontrados:")
+        
+        # Si hay más de 20 resultados, la lógica ya nos dio los 10 primeros y 10 últimos
+        if total > 20:
+            print("(Mostrando los 10 más livianos y los 10 más pesados)")
+            
+            # Dividimos visualmente para que el usuario note el salto
+            parte_1 = lista_resultados[:10]
+            parte_2 = lista_resultados[10:]
+            
+            print(tabulate(parte_1, headers="keys", tablefmt="fancy_grid"))
+            print("\n          ... [ Se omiten registros intermedios ] ...\n")
+            print(tabulate(parte_2, headers="keys", tablefmt="fancy_grid"))
+        else:
+            # Si son 20 o menos, se imprimen todos de una vez
+            print(tabulate(lista_resultados, headers="keys", tablefmt="fancy_grid"))
+    else:
+        print("\nNo se encontraron computadores con esos criterios.")
+
+    print("\n" + "=" * 80)
 
 
 def print_req_3(control):
