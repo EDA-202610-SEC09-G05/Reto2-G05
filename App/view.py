@@ -142,14 +142,14 @@ def print_req_2(control):
         
         # Si hay más de 20 resultados, la lógica ya nos dio los 10 primeros y 10 últimos
         if total > 20:
-            print("(Mostrando los 10 más livianos y los 10 más pesados)")
+            print("10 más livianos ")
             
             # Dividimos visualmente para que el usuario note el salto
             parte_1 = lista_resultados[:10]
             parte_2 = lista_resultados[10:]
             
             print(tabulate(parte_1, headers="keys", tablefmt="fancy_grid"))
-            print("\n          ... [ Se omiten registros intermedios ] ...\n")
+            print("\n 10 más pesados\n")
             print(tabulate(parte_2, headers="keys", tablefmt="fancy_grid"))
         else:
             # Si son 20 o menos, se imprimen todos de una vez
