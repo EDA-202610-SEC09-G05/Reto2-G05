@@ -91,7 +91,7 @@ def print_req_1(control):
     while True:
         brand = input("Ingrese la marca: ").strip().lower()
         form_factor = input("Ingrese el factor de forma: ").strip().lower()
-        if brand in control['brand'] and form_factor in control['form_factor']:
+        if sc.contains(control['brand'], brand) and sc.contains(control['form_factor'], form_factor):
             break
         print("Marca o factor de forma no encontrada, vuelva a ingresar.\n")
     
@@ -229,7 +229,7 @@ def print_req_4(control):
     while True:
         cpu_brand = input("Ingrese la marca del CPU: ").strip().lower()
         gpu_model = input("Ingrese el modelo de GPU: ").strip().lower()
-        if gpu_model in control['gpu_model'] and cpu_brand in control['brandCPU']:
+        if sc.contains(control['gpu_model'], gpu_model) and lp.contains(control['cpu_brand'], cpu_brand):
             break
         print("Modelo de GPU o marca de CPU no encontrado, vuelva a ingresar.\n")
         
