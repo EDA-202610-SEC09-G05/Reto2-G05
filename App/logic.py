@@ -17,9 +17,6 @@ from tabulate import tabulate
 
 
 def new_logic():
-    """
-    Crea el catálogo inicial con tus estructuras de Mapas.
-    """
     return {
         "computer": al.new_list(),
         "year": lp.new_map(500, 0.5),
@@ -27,7 +24,8 @@ def new_logic():
         "cpu_brand": lp.new_map(500, 0.5),
         "gpu_model": sc.new_map(500, 0.5),
         "form_factor": sc.new_map(500, 0.5),
-        "os": lp.new_map(500, 0.5)
+        "os": lp.new_map(500, 0.5),
+        "brand_gpu": sc.new_map(500, 0.5)
     }
 
 def load_year(catalog, comp):
@@ -133,6 +131,12 @@ def load_data(catalog, size):
             load_gpu_model(catalog, comp)
             load_os(catalog, comp)
             load_year(catalog, comp)
+            
+            key = (comp["brand"].lower() + comp["gpu_model"].lower()).strip()
+            if not sc.contains(catalog["brand_gpu"], key):
+                sc.put(catalog["brand_gpu"], key, al.new_list())
+            al.add_last(sc.get(catalog["brand_gpu"], key), comp)
+
 
     prim5 = al.sub_list(catalog["computer"], 0, 5)
     ult5 = al.sub_list(catalog["computer"], al.size(catalog["computer"])-5,5)
@@ -260,35 +264,38 @@ def req_2(catalog, num_nucleos, anio_lanzamiento):
 
 
 def compare_req3(c1, c2):
-    """REQ 3: Precio desc. Empate: Peso desc."""
+    """Precio desc. Empate: peso desc."""
     p1, p2 = float(c1["price"]), float(c2["price"])
-    if p1 > p2: return True
-    if p1 < p2: return False
-    # Empate: Peso de mayor a menor
+    if p1 != p2:
+        return p1 > p2
     return float(c1["weight_kg"]) > float(c2["weight_kg"])
+
 
 def req_3(catalog, n, brand, gpu_model):
     inicio = get_time()
-    llave = (brand.lower() + gpu_model.lower()).strip()
-    equipos_filtrados = sc.get(catalog["brand_gpu"], llave)
-    
-    if not equipos_filtrados or al.size(equipos_filtrados) == 0:
+    key = (brand.lower() + gpu_model.lower()).strip()
+
+    lista = sc.get(catalog["brand_gpu"], key)
+    if not lista or al.size(lista) == 0:
         return delta_time(inicio, get_time()), 0, 0, []
 
-    # qs.quick_sort(lista, criterio, modulo_lista)
-    qs.quick_sort(equipos_filtrados, compare_req3, al)
+    # Ordenar
+    qs.quick_sort(lista, compare_req3, al)
 
-    # 2. Extraer Top N y RAM
-    total_f = al.size(equipos_filtrados)
+    total = al.size(lista)
     suma_ram = 0
     top_n = []
-    for i in range(total_f):
-        comp = al.get_element(equipos_filtrados, i)
-        suma_ram += int(comp["ram_gb"])
-        if i < int(n):
-            top_n.append(comp)
-            
-    return delta_time(inicio, get_time()), total_f, round(suma_ram/total_f, 2), top_n
+
+    limite = min(int(n), total)
+    for i in range(total):
+        c = al.get_element(lista, i)
+        suma_ram += int(c["ram_gb"])
+        if i < limite:
+            top_n.append(c)
+
+    promedio_ram = suma_ram / total if total > 0 else 0
+
+    return delta_time(inicio, get_time()), total, round(promedio_ram, 2), top_n
 
 
 def compare_req4(c1, c2):

@@ -116,68 +116,110 @@ def print_req_2(control):
     anio_lanzamiento = input("Ingrese el año de lanzamiento: ")
 
     # Llamado a la lógica
-    resultado_logica = l.req_2(control, num_nucleos, anio_lanzamiento)
-    dtime, total, promedio_peso, lista_resultados = resultado_logica
+    dtime, total, promedio_peso, lista_resultados = l.req_2(
+        control, num_nucleos, anio_lanzamiento
+    )
 
+    # Resumen del requerimiento (según PDF)
     resumen_req = [
-        ["Total encontrados", f"{total}"],
-        ["Peso promedio", f"{promedio_peso} kg"],
+        ["Total encontrados", total],
+        ["Peso promedio (kg)", round(promedio_peso, 2)],
         ["Tiempo de ejecución", f"{round(dtime, 2)} ms"]
     ]
-    print(tabulate(resumen_req, tablefmt="fancy_grid"))
+    print(tabulate(resumen_req, headers=["Campo", "Valor"], tablefmt="fancy_grid"))
 
     if total > 0:
-        # Convertir array_list a lista de Python para que tabulate no sufra
+        # Convertir array_list a lista de Python
         resultados_py = []
         for i in range(al.size(lista_resultados)):
             resultados_py.append(al.get_element(lista_resultados, i))
 
+        # Construir tabla SOLO con las columnas pedidas en el PDF
+        tabla = []
+        for c in resultados_py:
+            tabla.append([
+                c["device_type"],
+                c["model"],
+                c["os"],
+                c["cpu_brand"],
+                c["ram_gb"],
+                c["storage_gb"],
+                c["weight_kg"]
+            ])
+
+        headers = [
+            "Tipo de dispositivo",
+            "Modelo",
+            "Sistema Operativo",
+            "Marca CPU",
+            "RAM (GB)",
+            "Almacenamiento (GB)",
+            "Peso (kg)"
+        ]
+
         if total > 20:
             print("\n>>> Los 10 más livianos:")
-            print(tabulate(resultados_py[:10], headers="keys", tablefmt="fancy_grid"))
+            print(tabulate(tabla[:10], headers=headers, tablefmt="fancy_grid"))
+
             print("\n>>> Los 10 más pesados:")
-            print(tabulate(resultados_py[-10:], headers="keys", tablefmt="fancy_grid"))
+            print(tabulate(tabla[-10:], headers=headers, tablefmt="fancy_grid"))
         else:
-            print(tabulate(resultados_py, headers="keys", tablefmt="fancy_grid"))
+            print(tabulate(tabla, headers=headers, tablefmt="fancy_grid"))
     else:
         print("\nNo se encontraron resultados.")
 
 def print_req_3(control):
-    """
-    Función que imprime la solución del Requerimiento 3 en consola
-    """
+    print("\n" + "=" * 90)
+    print("      REQUERIMIENTO 3: TOP N EQUIPOS MÁS COSTOSOS POR MARCA Y GPU")
+    print("=" * 90)
+
     while True:
         brand = input("Ingrese la marca del equipo: ").strip().lower()
         gpu_model = input("Ingrese el modelo de la GPU: ").strip().lower()
-        
-        # Validar usando la llave compuesta que creamos en load_data
-        llave_busqueda = (brand + gpu_model).strip()
-        if llave_busqueda in control['brand_gpu']:
+        key = (brand + gpu_model).strip()
+        if key in control["brand_gpu"]:
             break
-        print("Combinación de Marca y GPU no encontrada, vuelva a ingresar.\n")
-    
-    n = int(input("Ingrese el número de registros a listar (N): "))
-    
-    # Llamado a la lógica
-    tiempo, total, promedio_ram, resultados = l.req_3(control, n, gpu_model, brand)
+        print("Combinación Marca + GPU no encontrada.\n")
 
-    # Formateo de la tabla de resultados para tabulate
-    tabla_top = []
+    n = int(input("Ingrese el número de equipos a listar (N): "))
+
+    tiempo, total, promedio_ram, resultados = l.req_3(
+        control, n, brand, gpu_model
+    )
+
+    print(f"\nTiempo: {round(tiempo, 2)} ms")
+    print(f"Total equipos encontrados: {total}")
+    print(f"Promedio RAM: {promedio_ram} GB\n")
+
+    if total == 0:
+        print("No hay resultados para mostrar.")
+        return control
+
+    tabla = []
     for c in resultados:
-        tabla_top.append([
-            c['device_type'], c['model'], c['ram_gb'], 
-            c['storage_gb'], c['gpu_model'], c['weight_kg'], 
+        tabla.append([
+            c["device_type"],
+            c["model"],
+            c["ram_gb"],
+            c["storage_gb"],
+            c["gpu_brand"],
+            c["gpu_model"],
+            c["weight_kg"],
             f"${float(c['price']):,.2f}"
         ])
 
-    print("\n" + "=" * 90)
-    print(f"RESULTADO REQUERIMIENTO 3 - MARCA: {brand.upper()} | GPU: {gpu_model.upper()}")
-    print(f"Tiempo: {tiempo:.2f} ms | Total: {total} | Promedio RAM: {promedio_ram:.2f} GB")
-    print("=" * 90)
-    
-    headers = ["Tipo", "Modelo", "RAM", "Disco", "GPU", "Peso", "Precio"]
-    print(tabulate(tabla_top, headers=headers, tablefmt="fancy_grid"))
-    
+    headers = [
+        "Tipo",
+        "Modelo",
+        "RAM (GB)",
+        "Almacenamiento (GB)",
+        "Marca GPU",
+        "Modelo GPU",
+        "Peso (kg)",
+        "Precio"
+    ]
+
+    print(tabulate(tabla, headers=headers, tablefmt="fancy_grid"))
     return control
 
 def print_req_4(control):
