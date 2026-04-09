@@ -90,9 +90,6 @@ def print_data(control, id):
     pass
 
 def print_req_1(control):
-    """
-    Función que imprime la solución del Requerimiento 1 en consola.
-    """
 
     print("\n" + "=" * 80)
     print("      REQUERIMIENTO 1: EQUIPOS POR MARCA Y FACTOR DE FORMA")
@@ -203,7 +200,6 @@ def print_req_3(control):
         control, n, brand, gpu_model
     )
 
-    # ✅ AQUÍ estaba el problema: ahora SI se imprime siempre
     print(f"\nTiempo de ejecución: {round(tiempo, 2)} ms")
     print(f"Total equipos encontrados: {total}")
     print(f"Promedio RAM: {promedio_ram} GB\n")
@@ -241,9 +237,7 @@ def print_req_3(control):
 
 
 def print_req_4(control):
-    """
-        Función que imprime la solución del Requerimiento 4 en consola
-    """
+
     while True:
         cpu_brand = input("Ingrese la marca del CPU: ").strip().lower()
         gpu_model = input("Ingrese el modelo de GPU: ").strip().lower()
@@ -265,17 +259,11 @@ def print_req_4(control):
 
 
 def print_req_5(control):
-    """
-    Función que imprime la solución del Requerimiento 5 en consola.
-    """
 
     print("\n" + "=" * 100)
     print("      REQUERIMIENTO 5: TOP N EQUIPOS MEJOR EQUIPADOS")
     print("=" * 100)
 
-    # -------------------------------
-    # 1. Captura y validación de datos
-    # -------------------------------
     while True:
         brand = input("Ingrese la marca del equipo: ").strip().lower()
         form_factor = input("Ingrese el factor de forma (ej: gaming, atx): ").strip().lower()
@@ -293,16 +281,10 @@ def print_req_5(control):
         print("Error: Los valores deben ser numéricos.")
         return control
 
-    # -------------------------------
-    # 2. Llamado a la lógica
-    # -------------------------------
     tiempo, total, intel, amd, resultados = l.req_5(
         control, n, y_init, y_end, brand, form_factor
     )
 
-    # -------------------------------
-    # 3. Resumen
-    # -------------------------------
     print("\n" + "=" * 100)
     print(f"RESULTADOS REQ 5 | Marca: {brand.upper()} | Forma: {form_factor.upper()}")
     print("=" * 100)
@@ -320,9 +302,7 @@ def print_req_5(control):
         print("\nNo se encontraron computadores que cumplan los criterios.")
         return control
 
-    # -------------------------------
-    # 4. Construcción de la tabla (UNA SOLA VEZ)
-    # -------------------------------
+
     tabla = []
     for comp in resultados:
         tabla.append([

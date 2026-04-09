@@ -2,7 +2,6 @@ import time
 import csv
 import sys
 
-# Configuración obligatoria PDF pág. 11
 csv.field_size_limit(2147483647)
 sys.setrecursionlimit(10000)
 
@@ -103,11 +102,9 @@ def load_data(catalog, size):
     total = 0
     os_count = lp.new_map(10, 0.5)
 
-    # 1. Lectura del archivo
     with open(url, encoding="utf-8") as f:
         filas = csv.DictReader(f)
         for comp in filas:
-            # Guardamos en el catálogo original (ArrayList)
             al.add_last(catalog["computer"], comp)
             # Guardamos en lista temporal para los Tops
             total += 1
@@ -120,7 +117,6 @@ def load_data(catalog, size):
             if y_actual < min_y: min_y = y_actual
             if y_actual > max_y: max_y = y_actual
             
-            # Conteo de OS
             os_name = comp["os"]
             if not lp.contains(os_count,os_name):
                 lp.put(os_count, os_name, 0)
@@ -163,7 +159,6 @@ def load_data(catalog, size):
             "price": c["price"]
         })
 
-    # 4. Construcción de BOTTOM 5 (Últimos 5)
     print_last5 = []
 
     for c in ult5["elements"]:
@@ -184,7 +179,6 @@ def load_data(catalog, size):
 
 
 def compare_comp(c1, c2):
-    """Descendente por precio. Empate: Ascendente por modelo."""
     if c2 is None: return True 
     p1, p2 = float(c1["price"]), float(c2["price"])
     if p1 != p2:
@@ -192,7 +186,6 @@ def compare_comp(c1, c2):
     return c1["model"] < c2["model"]
 
 def compare_comp2(c1, c2):
-    """Descendente por precio. Empate: Ascendente por modelo."""
     if c2 is None: return True 
     p1, p2 = float(c1["price"]), float(c2["price"])
     if p1 != p2:
@@ -259,7 +252,6 @@ def req_1(catalog, brand, form_factor):
     return lista_resultado, lista_computadores
 
 def compare_req2(c1, c2):
-    """Ascendente por peso. Empate: Ascendente por modelo."""
     w1, w2 = float(c1["weight_kg"]), float(c2["weight_kg"])
     if w1 != w2:
         return w1 < w2
@@ -287,7 +279,6 @@ def req_2(catalog, num_nucleos, anio_lanzamiento):
 
 
 def compare_req3(c1, c2):
-    """Precio desc. Empate: peso desc."""
     p1, p2 = float(c1["price"]), float(c2["price"])
     if p1 != p2:
         return p1 > p2
@@ -302,7 +293,6 @@ def req_3(catalog, n, brand, gpu_model):
     if not lista or al.size(lista) == 0:
         return delta_time(inicio, get_time()), 0, 0, []
 
-    # ✅ LLAMADO CORRECTO A QUICK SORT
     qs(lista, compare_req3, al)
 
     total = al.size(lista)
@@ -396,12 +386,10 @@ def req_4(catalog, cpu_brand, gpu_model):
 
 
 def compare_req5(c1, c2):
-    # 1. RAM (Mayor a menor)
     r1, r2 = int(c1["ram_gb"]), int(c2["ram_gb"])
     if r1 > r2: return True
     if r1 < r2: return False
 
-    # 2. CPU Boost (Mayor a menor)
     b1, b2 = float(c1["cpu_boost_ghz"]), float(c2["cpu_boost_ghz"])
     if b1 > b2: return True
     if b1 < b2: return False
@@ -411,17 +399,11 @@ def compare_req5(c1, c2):
 
 
 def req_5(catalog, n, y_init, y_end, brand, form_factor):
-    """
-    Requerimiento 5:
-    Obtiene el Top N de los equipos mejor equipados para una marca y
-    un factor de forma dados, dentro de un rango de años de lanzamiento.
-    """
 
     inicio = get_time()
 
     llave = (brand.lower() + form_factor.lower()).strip()
 
-    # Acceso directo al mapa hash (O(1))
     candidatos = sc.get(catalog["brand_form_map"], llave)
 
     filtrados = al.new_list()
@@ -448,21 +430,16 @@ def req_5(catalog, n, y_init, y_end, brand, form_factor):
 
     total_cumplieron = al.size(filtrados)
 
-    # Si ningún computador cumple el filtro
     if total_cumplieron == 0:
         return delta_time(inicio, get_time()), 0, 0, 0, []
 
-    # Ordenamiento según los criterios definidos en el PDF
-    # Complejidad: O(K log K), donde K es la cantidad de equipos filtrados
     qs(filtrados, compare_req5, al)
 
-    # Extracción del Top N
     top_n = []
     limite = min(int(n), total_cumplieron)
     for i in range(limite):
         top_n.append(al.get_element(filtrados, i))
 
-    # Retorno de resultados
     return (
         delta_time(inicio, get_time()),
         total_cumplieron,
