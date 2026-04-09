@@ -90,24 +90,41 @@ def print_data(control, id):
     pass
 
 def print_req_1(control):
+    """
+    Función que imprime la solución del Requerimiento 1 en consola.
+    """
+
+    print("\n" + "=" * 80)
+    print("      REQUERIMIENTO 1: EQUIPOS POR MARCA Y FACTOR DE FORMA")
+    print("=" * 80)
+
     while True:
-        brand = input("Ingrese la marca: ").strip().lower()
-        form_factor = input("Ingrese el factor de forma: ").strip().lower()
-        if sc.contains(control['brand'], brand) and sc.contains(control['form_factor'], form_factor):
+        brand = input("Ingrese la marca (ej: msi, lenovo, hp): ").strip().lower()
+        form_factor = input("Ingrese el factor de forma (ej: atx, gaming, ultrabook): ").strip().lower()
+
+        # Validación correcta usando mapas
+        if sc.contains(control["brand"], brand) and sc.contains(control["form_factor"], form_factor):
             break
-        print("Marca o factor de forma no encontrada, vuelva a ingresar.\n")
-    
+
+        print(
+            "\nMarca o factor de forma no encontrado.\n"
+            "Recuerde que el factor de forma NO es 'desktop' o 'laptop'.\n"
+            "Ejemplos válidos: atx, gaming, full-tower, ultrabook.\n"
+        )
+
     lista_resultado, lista_computadores = l.req_1(control, brand, form_factor)
+
     print("\n" + "=" * 80)
-    print(f"RESULTADO REQUERIMIENTO 1 - Marca: {brand} | Factor de forma: {form_factor}")
+    print(f"RESULTADO REQ 1 | Marca: {brand.upper()} | Factor de forma: {form_factor.upper()}")
     print("=" * 80)
-    print(tabulate(lista_resultado, headers=["Campo", "Valor"], tablefmt="fancy_grid"))
-    print("\n" + "=" * 80)
-    print("COMPUTADORAS FILTRADAS")
-    print("=" * 80)
-    print(tabulate(lista_computadores, headers=["Computadora", "Detalles"], tablefmt="fancy_grid"))
+
+    print(tabulate(lista_resultado, headers=["Campo", "Valor"], tablefmt="grid"))
+
+    print("\nCOMPUTADORES FILTRADOS:\n")
+    print(tabulate(lista_computadores, headers=["Computadora", "Detalles"], tablefmt="grid"))
 
     return control
+
 
 def print_req_2(control):
     print("\n" + "=" * 80)
