@@ -31,7 +31,7 @@ def new_logic():
 
 
 def load_year(catalog, comp):
-    year = comp["release_year"]
+    year = comp["release_year"].lower()
     years = catalog["year"]
     if not lp.contains(years,year):
         lp.put(years,year,al.new_list())
@@ -39,7 +39,7 @@ def load_year(catalog, comp):
     pass
 
 def load_brand(catalog, comp):
-    brand = comp["brand"]
+    brand = comp["brand"].lower()
     brands = catalog["brand"]
     if not sc.contains(brands,brand):
         sc.put(brands,brand,al.new_list())
@@ -47,7 +47,7 @@ def load_brand(catalog, comp):
     pass
 
 def load_cpu_brand(catalog, comp):
-    cpu_brand = comp["cpu_brand"]
+    cpu_brand = comp["cpu_brand"].lower()
     cpu_brands = catalog["cpu_brand"]
     if not lp.contains(cpu_brands,cpu_brand):
         lp.put(cpu_brands,cpu_brand,al.new_list())
@@ -55,7 +55,7 @@ def load_cpu_brand(catalog, comp):
     pass
 
 def load_gpu_model(catalog, comp):
-    gpu_model = comp["gpu_model"]
+    gpu_model = comp["gpu_model"].lower()
     gpu_models = catalog["gpu_model"]
     if not sc.contains(gpu_models,gpu_model):
         sc.put(gpu_models,gpu_model,al.new_list())
@@ -63,7 +63,7 @@ def load_gpu_model(catalog, comp):
     pass
 
 def load_form_factor(catalog, comp):
-    form_factor = comp["form_factor"]
+    form_factor = comp["form_factor"].lower()
     form_factors = catalog["form_factor"]
     if not sc.contains(form_factors,form_factor):
         sc.put(form_factors,form_factor,al.new_list())
@@ -71,7 +71,7 @@ def load_form_factor(catalog, comp):
     pass
 
 def load_os(catalog, comp):
-    os = comp["os"]
+    os = comp["os"].lower()
     oss = catalog["os"]
     if not lp.contains(oss,os):
         lp.put(oss,os,al.new_list())
