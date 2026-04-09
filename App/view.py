@@ -144,11 +144,41 @@ def print_req_2(control):
 
 def print_req_3(control):
     """
-        Función que imprime la solución del Requerimiento 3 en consola
+    Función que imprime la solución del Requerimiento 3 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 3
-    pass
+    while True:
+        brand = input("Ingrese la marca del equipo: ").strip().lower()
+        gpu_model = input("Ingrese el modelo de la GPU: ").strip().lower()
+        
+        # Validar usando la llave compuesta que creamos en load_data
+        llave_busqueda = (brand + gpu_model).strip()
+        if llave_busqueda in control['brand_gpu']:
+            break
+        print("Combinación de Marca y GPU no encontrada, vuelva a ingresar.\n")
+    
+    n = int(input("Ingrese el número de registros a listar (N): "))
+    
+    # Llamado a la lógica
+    tiempo, total, promedio_ram, resultados = l.req_3(control, n, gpu_model, brand)
 
+    # Formateo de la tabla de resultados para tabulate
+    tabla_top = []
+    for c in resultados:
+        tabla_top.append([
+            c['device_type'], c['model'], c['ram_gb'], 
+            c['storage_gb'], c['gpu_model'], c['weight_kg'], 
+            f"${float(c['price']):,.2f}"
+        ])
+
+    print("\n" + "=" * 90)
+    print(f"RESULTADO REQUERIMIENTO 3 - MARCA: {brand.upper()} | GPU: {gpu_model.upper()}")
+    print(f"Tiempo: {tiempo:.2f} ms | Total: {total} | Promedio RAM: {promedio_ram:.2f} GB")
+    print("=" * 90)
+    
+    headers = ["Tipo", "Modelo", "RAM", "Disco", "GPU", "Peso", "Precio"]
+    print(tabulate(tabla_top, headers=headers, tablefmt="fancy_grid"))
+    
+    return control
 
 def print_req_4(control):
     """
@@ -176,10 +206,43 @@ def print_req_4(control):
 
 def print_req_5(control):
     """
-        Función que imprime la solución del Requerimiento 5 en consola
+    Función que imprime la solución del Requerimiento 5 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 5
-    pass
+    while True:
+        brand = input("Ingrese la marca del equipo: ").strip().lower()
+        form_factor = input("Ingrese el factor de forma (ej: ultrabook): ").strip().lower()
+        
+        # Validar usando la llave compuesta Marca + Forma
+        llave_busqueda = (brand + form_factor).strip()
+        if llave_busqueda in control['brand_form_map']:
+            break
+        print("Combinación de Marca y Factor de Forma no encontrada, vuelva a ingresar.\n")
+    
+    y_init = int(input("Ingrese el año de lanzamiento inicial: "))
+    y_end = int(input("Ingrese el año de lanzamiento final: "))
+    n = int(input("Ingrese el número de computadores a listar (N): "))
+
+    # Llamado a la lógica
+    tiempo, total, intel, amd, lista_top = l.req_5(control, n, y_init, y_end, brand, form_factor)
+
+    # Formateo de la tabla para tabulate
+    tabla_top = []
+    for c in lista_top:
+        tabla_top.append([
+            c['model'], c['ram_gb'], c['cpu_boost_ghz'], 
+            c['release_year'], c['cpu_brand'], c['cpu_model'], 
+            f"${float(c['price']):,.2f}"
+        ])
+
+    print("\n" + "=" * 100)
+    print(f"RESULTADO REQUERIMIENTO 5 - MARCA: {brand.upper()} | FORMA: {form_factor.upper()}")
+    print(f"Años: {y_init}-{y_end} | Intel: {intel} | AMD: {amd} | Tiempo: {tiempo:.2f} ms")
+    print("=" * 100)
+    
+    headers = ["Modelo", "RAM", "Boost", "Año", "CPU Brand", "CPU Model", "Precio"]
+    print(tabulate(tabla_top, headers=headers, tablefmt="fancy_grid"))
+    
+    return control
 
 
 def print_req_6(control):
