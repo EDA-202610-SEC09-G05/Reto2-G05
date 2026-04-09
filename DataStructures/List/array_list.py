@@ -465,3 +465,23 @@ def to_py_list(my_list):
         Lista Python con los elementos en el mismo orden de aparición.
     """
     return my_list["elements"]
+
+def join_lists(list_1, list_2):
+    """
+    Retorna una nueva lista que es la concatenación de las dos listas dadas.
+
+    Parameters
+    ----------
+    list_1 : dict
+        Primera lista (array_list).
+    list_2 : dict
+        Segunda lista (array_list).
+
+    Returns
+    -------
+    dict
+        Nueva lista (array_list) con los elementos de ambas listas.
+    """
+    for element in list_2["elements"]:
+        add_last(list_1, element)
+    return list_1

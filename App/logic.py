@@ -192,6 +192,22 @@ def compare_comp2(c1, c2):
         return p1 > p2
     return c1["model"] < c2["model"]
 
+def compare_computers_w(c1, c2):
+    if c2 is None:
+        return True
+
+    price1 = float(c1["price"])
+    price2 = float(c2["price"])
+    weight1 = float(c1["weight_kg"])
+    weight2 = float(c2["weight_kg"])
+
+    if price1 > price2:
+        return True
+    if price1 < price2:
+        return False
+
+    return weight1 < weight2
+
 def req_1(catalog, brand, form_factor):
     time_start = get_time()
     sl_brands = sc.get(catalog["brand"],brand)
