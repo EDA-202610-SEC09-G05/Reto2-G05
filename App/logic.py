@@ -25,8 +25,10 @@ def new_logic():
         "gpu_model": sc.new_map(500, 0.5),
         "form_factor": sc.new_map(500, 0.5),
         "os": lp.new_map(500, 0.5),
-        "brand_gpu": sc.new_map(500, 0.5)
+        "brand_gpu": sc.new_map(500, 0.5),
+        "brand_form_map": sc.new_map(500, 0.5)  
     }
+
 
 def load_year(catalog, comp):
     year = comp["release_year"]
@@ -136,6 +138,11 @@ def load_data(catalog, size):
             if not sc.contains(catalog["brand_gpu"], key):
                 sc.put(catalog["brand_gpu"], key, al.new_list())
             al.add_last(sc.get(catalog["brand_gpu"], key), comp)
+            
+            key = (comp["brand"].lower() + comp["form_factor"].lower()).strip()
+            if not sc.contains(catalog["brand_form_map"], key):
+                sc.put(catalog["brand_form_map"], key, al.new_list())
+            al.add_last(sc.get(catalog["brand_form_map"], key), comp)
 
 
     prim5 = al.sub_list(catalog["computer"], 0, 5)
@@ -295,8 +302,8 @@ def req_3(catalog, n, brand, gpu_model):
     if not lista or al.size(lista) == 0:
         return delta_time(inicio, get_time()), 0, 0, []
 
-    # Ordenar
-    qs.quick_sort(lista, compare_req3, al)
+    # ✅ LLAMADO CORRECTO A QUICK SORT
+    qs(lista, compare_req3, al)
 
     total = al.size(lista)
     suma_ram = 0
@@ -312,6 +319,7 @@ def req_3(catalog, n, brand, gpu_model):
     promedio_ram = suma_ram / total if total > 0 else 0
 
     return delta_time(inicio, get_time()), total, round(promedio_ram, 2), top_n
+
 
 
 def compare_req4(c1, c2):
@@ -387,56 +395,156 @@ def req_4(catalog, cpu_brand, gpu_model):
     return lista_resultado, lista_computadores
 
 
-def req_5(catalog):
+def compare_req5(c1, c2):
+    # 1. RAM (Mayor a menor)
+    r1, r2 = int(c1["ram_gb"]), int(c2["ram_gb"])
+    if r1 > r2: return True
+    if r1 < r2: return False
+
+    # 2. CPU Boost (Mayor a menor)
+    b1, b2 = float(c1["cpu_boost_ghz"]), float(c2["cpu_boost_ghz"])
+    if b1 > b2: return True
+    if b1 < b2: return False
+
+    # 3. Precio (Menor a mayor)
+    return float(c1["price"]) < float(c2["price"])
+
+
+def req_5(catalog, n, y_init, y_end, brand, form_factor):
     """
-    Retorna el resultado del requerimiento 5
+    Requerimiento 5:
+    Obtiene el Top N de los equipos mejor equipados para una marca y
+    un factor de forma dados, dentro de un rango de años de lanzamiento.
     """
-    # TODO: Modificar el requerimiento 5
-    pass
+
+    inicio = get_time()
+
+    llave = (brand.lower() + form_factor.lower()).strip()
+
+    # Acceso directo al mapa hash (O(1))
+    candidatos = sc.get(catalog["brand_form_map"], llave)
+
+    filtrados = al.new_list()
+
+    intel_count = 0
+    amd_count = 0
+
+    if candidatos:
+        for comp in candidatos["elements"]:
+
+            # Filtro por rango de años
+            anio = int(comp["release_year"])
+            if int(y_init) <= anio <= int(y_end):
+
+                # Agregar a la lista de filtrados
+                al.add_last(filtrados, comp)
+
+                # Conteo de tipo de procesador
+                cpu = comp["cpu_brand"].lower()
+                if cpu == "intel":
+                    intel_count += 1
+                elif cpu == "amd":
+                    amd_count += 1
+
+    total_cumplieron = al.size(filtrados)
+
+    # Si ningún computador cumple el filtro
+    if total_cumplieron == 0:
+        return delta_time(inicio, get_time()), 0, 0, 0, []
+
+    # Ordenamiento según los criterios definidos en el PDF
+    # Complejidad: O(K log K), donde K es la cantidad de equipos filtrados
+    qs(filtrados, compare_req5, al)
+
+    # Extracción del Top N
+    top_n = []
+    limite = min(int(n), total_cumplieron)
+    for i in range(limite):
+        top_n.append(al.get_element(filtrados, i))
+
+    # Retorno de resultados
+    return (
+        delta_time(inicio, get_time()),
+        total_cumplieron,
+        intel_count,
+        amd_count,
+        top_n
+    )
 
 
 
 def compare_req6(c1, c2):
-    """Descendente por eficiencia. Empate: Precio ascendente."""
     s1, s2 = float(c1["efficient_score"]), float(c2["efficient_score"])
     if s1 != s2:
         return s1 > s2
     return float(c1["price"]) < float(c2["price"])
 
+
 def req_6(catalog, n_top, form_factor, screen_type, y_min, y_max):
+
     inicio = get_time()
+
     filtrados = al.new_list()
-    win, lin = 0, 0
+    win_count = 0
+    linux_count = 0
 
     size = al.size(catalog["computer"])
-    for i in range(size):
-        c = al.get_element(catalog["computer"], i)
-        if (c["form_factor"].lower() == form_factor.lower() and 
-            c["display_type"].lower() == screen_type.lower() and 
-            int(y_min) <= int(c["release_year"]) <= int(y_max)):
-            
-            # Cálculo Eficiencia = (Battery_wh * CPU_Boost) / Charger_Watts
-            bat, bst, wts = float(c["battery_wh"]), float(c["cpu_boost_ghz"]), float(c["charger_watts"])
-            c["efficient_score"] = (bat * bst) / wts if wts > 0 else 0
-            
-            al.add_last(filtrados, c)
-            if "windows" in c["os"].lower(): win += 1
-            elif "linux" in c["os"].lower(): lin += 1
 
-    ordenados = ms.sort(filtrados, compare_req6)
-    
+    for i in range(size):
+        comp = al.get_element(catalog["computer"], i)
+
+        if comp["device_type"].lower() != "laptop":
+            continue
+
+        if (comp["display_type"].lower() == screen_type.lower() and
+            int(y_min) <= int(comp["release_year"]) <= int(y_max)):
+
+            # Cálculo del puntaje de eficiencia energética
+            bat = float(comp["battery_wh"])
+            boost = float(comp["cpu_boost_ghz"])
+            watts = float(comp["charger_watts"])
+
+            if watts > 0:
+                comp["efficient_score"] = (bat * boost) / watts
+            else:
+                comp["efficient_score"] = 0
+
+            al.add_last(filtrados, comp)
+
+            # Conteo de sistemas operativos
+            os_name = comp["os"].lower()
+            if "windows" in os_name:
+                win_count += 1
+            elif "linux" in os_name:
+                linux_count += 1
+
+    total = al.size(filtrados)
+
+    if total == 0:
+        return {
+            "tiempo": delta_time(inicio, get_time()),
+            "total": 0,
+            "windows": 0,
+            "linux": 0,
+            "top": []
+        }
+
+    ms(filtrados, compare_req6, al)
+
     top_final = []
-    limite = min(int(n_top), al.size(ordenados))
+    limite = min(int(n_top), total)
     for i in range(limite):
-        top_final.append(al.get_element(ordenados, i))
+        top_final.append(al.get_element(filtrados, i))
 
     return {
         "tiempo": delta_time(inicio, get_time()),
-        "total": al.size(ordenados),
-        "windows": win,
-        "linux": lin,
+        "total": total,
+        "windows": win_count,
+        "linux": linux_count,
         "top": top_final
     }
+
+
 
 # Funciones para medir tiempos de ejecucion
 

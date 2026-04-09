@@ -3,6 +3,8 @@ from tabulate import tabulate
 from DataStructures.List import array_list as al
 from DataStructures.Map import map_linear_probing as lp
 from DataStructures.Set import set as s
+from DataStructures.Map import map_separate_chaining as sc
+
 from App import logic as l
 
 def new_logic():
@@ -115,12 +117,10 @@ def print_req_2(control):
     num_nucleos = input("Ingrese el número de núcleos: ")
     anio_lanzamiento = input("Ingrese el año de lanzamiento: ")
 
-    # Llamado a la lógica
     dtime, total, promedio_peso, lista_resultados = l.req_2(
         control, num_nucleos, anio_lanzamiento
     )
 
-    # Resumen del requerimiento (según PDF)
     resumen_req = [
         ["Total encontrados", total],
         ["Peso promedio (kg)", round(promedio_peso, 2)],
@@ -129,12 +129,10 @@ def print_req_2(control):
     print(tabulate(resumen_req, headers=["Campo", "Valor"], tablefmt="fancy_grid"))
 
     if total > 0:
-        # Convertir array_list a lista de Python
         resultados_py = []
         for i in range(al.size(lista_resultados)):
             resultados_py.append(al.get_element(lista_resultados, i))
 
-        # Construir tabla SOLO con las columnas pedidas en el PDF
         tabla = []
         for c in resultados_py:
             tabla.append([
@@ -177,7 +175,8 @@ def print_req_3(control):
         brand = input("Ingrese la marca del equipo: ").strip().lower()
         gpu_model = input("Ingrese el modelo de la GPU: ").strip().lower()
         key = (brand + gpu_model).strip()
-        if key in control["brand_gpu"]:
+
+        if sc.contains(control["brand_gpu"], key):
             break
         print("Combinación Marca + GPU no encontrada.\n")
 
@@ -187,7 +186,8 @@ def print_req_3(control):
         control, n, brand, gpu_model
     )
 
-    print(f"\nTiempo: {round(tiempo, 2)} ms")
+    # ✅ AQUÍ estaba el problema: ahora SI se imprime siempre
+    print(f"\nTiempo de ejecución: {round(tiempo, 2)} ms")
     print(f"Total equipos encontrados: {total}")
     print(f"Promedio RAM: {promedio_ram} GB\n")
 
@@ -219,8 +219,9 @@ def print_req_3(control):
         "Precio"
     ]
 
-    print(tabulate(tabla, headers=headers, tablefmt="fancy_grid"))
+    print(tabulate(tabla, headers=headers, tablefmt="grid", stralign="center"))
     return control
+
 
 def print_req_4(control):
     """
@@ -248,95 +249,148 @@ def print_req_4(control):
 
 def print_req_5(control):
     """
-    Función que imprime la solución del Requerimiento 5 en consola
+    Función que imprime la solución del Requerimiento 5 en consola.
     """
-    while True:
-        brand = input("Ingrese la marca del equipo: ").strip().lower()
-        form_factor = input("Ingrese el factor de forma (ej: ultrabook): ").strip().lower()
-        
-        # Validar usando la llave compuesta Marca + Forma
-        llave_busqueda = (brand + form_factor).strip()
-        if llave_busqueda in control['brand_form_map']:
-            break
-        print("Combinación de Marca y Factor de Forma no encontrada, vuelva a ingresar.\n")
-    
-    y_init = int(input("Ingrese el año de lanzamiento inicial: "))
-    y_end = int(input("Ingrese el año de lanzamiento final: "))
-    n = int(input("Ingrese el número de computadores a listar (N): "))
-
-    # Llamado a la lógica
-    tiempo, total, intel, amd, lista_top = l.req_5(control, n, y_init, y_end, brand, form_factor)
-
-    # Formateo de la tabla para tabulate
-    tabla_top = []
-    for c in lista_top:
-        tabla_top.append([
-            c['model'], c['ram_gb'], c['cpu_boost_ghz'], 
-            c['release_year'], c['cpu_brand'], c['cpu_model'], 
-            f"${float(c['price']):,.2f}"
-        ])
 
     print("\n" + "=" * 100)
-    print(f"RESULTADO REQUERIMIENTO 5 - MARCA: {brand.upper()} | FORMA: {form_factor.upper()}")
-    print(f"Años: {y_init}-{y_end} | Intel: {intel} | AMD: {amd} | Tiempo: {tiempo:.2f} ms")
+    print("      REQUERIMIENTO 5: TOP N EQUIPOS MEJOR EQUIPADOS")
     print("=" * 100)
-    
-    headers = ["Modelo", "RAM", "Boost", "Año", "CPU Brand", "CPU Model", "Precio"]
-    print(tabulate(tabla_top, headers=headers, tablefmt="fancy_grid"))
-    
+
+    # -------------------------------
+    # 1. Captura y validación de datos
+    # -------------------------------
+    while True:
+        brand = input("Ingrese la marca del equipo: ").strip().lower()
+        form_factor = input("Ingrese el factor de forma (ej: gaming, atx): ").strip().lower()
+        key = (brand + form_factor).strip()
+
+        if sc.contains(control["brand_form_map"], key):
+            break
+        print("Combinación Marca + Factor de Forma no encontrada.\n")
+
+    try:
+        y_init = int(input("Ingrese el año de lanzamiento inicial: "))
+        y_end = int(input("Ingrese el año de lanzamiento final: "))
+        n = int(input("Ingrese el número de computadores a listar (N): "))
+    except ValueError:
+        print("Error: Los valores deben ser numéricos.")
+        return control
+
+    # -------------------------------
+    # 2. Llamado a la lógica
+    # -------------------------------
+    tiempo, total, intel, amd, resultados = l.req_5(
+        control, n, y_init, y_end, brand, form_factor
+    )
+
+    # -------------------------------
+    # 3. Resumen
+    # -------------------------------
+    print("\n" + "=" * 100)
+    print(f"RESULTADOS REQ 5 | Marca: {brand.upper()} | Forma: {form_factor.upper()}")
+    print("=" * 100)
+
+    resumen = [
+        ["Tiempo de ejecución (ms)", round(tiempo, 2)],
+        ["Total de computadores", total],
+        ["Computadores con CPU Intel", intel],
+        ["Computadores con CPU AMD", amd]
+    ]
+
+    print(tabulate(resumen, headers=["Campo", "Valor"], tablefmt="grid"))
+
+    if total == 0:
+        print("\nNo se encontraron computadores que cumplan los criterios.")
+        return control
+
+    # -------------------------------
+    # 4. Construcción de la tabla (UNA SOLA VEZ)
+    # -------------------------------
+    tabla = []
+    for comp in resultados:
+        tabla.append([
+            comp["device_type"],
+            comp["model"],
+            comp["ram_gb"],
+            comp["cpu_boost_ghz"],
+            f"${float(comp['price']):,.2f}",
+            comp["release_year"],
+            comp["cpu_brand"],
+            comp["cpu_model"]
+        ])
+
+    headers = [
+        "Tipo",
+        "Modelo",
+        "RAM (GB)",
+        "Boost CPU (GHz)",
+        "Precio",
+        "Año",
+        "CPU Brand",
+        "CPU Model"
+    ]
+
+    print("\nTOP N DE EQUIPOS MEJOR EQUIPADOS:\n")
+    print(tabulate(tabla, headers=headers, tablefmt="grid", stralign="center"))
+
     return control
 
 
+
 def print_req_6(control):
-    """
-    Función que imprime la solución del Requerimiento 6 en consola.
-    Muestra el Top N de eficiencia energética con filtros de pantalla y forma.
-    """
     print("\n" + "=" * 80)
     print("      REQUERIMIENTO 6: TOP N EQUIPOS CON MEJOR EFICIENCIA ENERGÉTICA")
     print("=" * 80)
 
-    # 1. Captura de parámetros de entrada
     try:
-        n_top = input("Ingrese el número de equipos a listar (N): ")
-        f_forma = input("Ingrese el Factor de forma (ej: Laptop, 2-in-1): ")
-        s_type = input("Ingrese el Tipo de pantalla (ej: IPS, OLED, LED): ")
-        
-        print("\n--- Rango de años ---")
+        n_top = int(input("Ingrese el número de equipos a listar (N): "))
+        form_factor = input("Ingrese el factor de forma (ej: laptop, ultrabook): ").strip().lower()
+        screen_type = input("Ingrese el tipo de pantalla (ej: IPS, OLED): ").strip().lower()
         y_min = int(input("Ingrese el año inicial: "))
         y_max = int(input("Ingrese el año final: "))
     except ValueError:
-        print("\nError: Los años y el valor N deben ser números enteros.")
-        return
+        print("Error: Los valores deben ser numéricos.")
+        return control
 
-    print(f"\nProcesando eficiencia para {f_forma} con pantalla {s_type} ({y_min}-{y_max})...")
+    res = l.req_6(control, n_top, form_factor, screen_type, y_min, y_max)
 
-    # 2. Llamado a la función de lógica
-    # res es el diccionario que retorna tu función req_6
-    res = l.req_6(control, n_top, f_forma, s_type, y_min, y_max)
-
-    # 3. Mostrar Resumen de la ejecución (según pide el PDF)
-    resumen_ejecucion = [
-        ["Tiempo de ejecución", f"{round(res['tiempo'], 2)} ms"],
-        ["Total equipos que cumplieron filtro", res["total"]],
-        ["Equipos con OS Windows", res["windows"]],
-        ["Equipos con OS Linux", res["linux"]]
+    resumen = [
+        ["Tiempo de ejecución (ms)", round(res["tiempo"], 2)],
+        ["Total de equipos", res["total"]],
+        ["Equipos con Windows", res["windows"]],
+        ["Equipos con Linux", res["linux"]]
     ]
-    
-    print("\n" + tabulate(resumen_ejecucion, headers=["Concepto", "Valor"], tablefmt="fancy_grid"))
 
-    # 4. Mostrar el Top N de equipos
-    if len(res["top"]) > 0:
-        print(f"\nTOP {n_top} DE EQUIPOS CON MEJOR PUNTAJE DE EFICIENCIA:")
-        # Imprimimos la lista de diccionarios directamente con tabulate
-        print(tabulate(res["top"], headers="keys", tablefmt="fancy_grid"))
-        
-        print("\n* Puntaje calculado como: (Batería * CPU Boost) / Watts Cargador")
-        print("* En caso de empate en eficiencia, se ordena por precio (menor a mayor).")
-    else:
-        print("\nNo se encontraron computadores que cumplan con todos los filtros aplicados.")
+    print("\nRESUMEN DE RESULTADOS:\n")
+    print(tabulate(resumen, headers=["Campo", "Valor"], tablefmt="grid"))
 
-    print("\n" + "=" * 80)
+    if len(res["top"]) == 0:
+        print("\nNo se encontraron equipos que cumplan los criterios.")
+        return control
+
+    tabla = []
+    for c in res["top"]:
+        tabla.append([
+            c["model"],
+            c["ram_gb"],
+            c["cpu_model"],
+            c["cpu_boost_ghz"],
+            round(c["efficient_score"], 3)
+        ])
+
+    headers = [
+        "Modelo",
+        "RAM (GB)",
+        "Modelo CPU",
+        "CPU Boost (GHz)",
+        "Puntaje de eficiencia"
+    ]
+
+    print("\nTOP N DE EQUIPOS MÁS EFICIENTES:\n")
+    print(tabulate(tabla, headers=headers, tablefmt="grid", stralign="center"))
+
+    return control
+
 
 # Se crea la lógica asociado a la vista
 control = new_logic()
