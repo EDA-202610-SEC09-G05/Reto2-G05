@@ -12,6 +12,7 @@ from DataStructures.List import array_list as al
 from DataStructures.List import single_linked_list as sl
 # Importa la función merge_sort desde tu archivo sort.py y dale el alias 'ms'
 from DataStructures.List.sort import merge_sort as ms
+from DataStructures.List.sort import quick_sort as qs
 from tabulate import tabulate
 
 
@@ -258,12 +259,36 @@ def req_2(catalog, num_nucleos, anio_lanzamiento):
 
 
 
-def req_3(catalog):
-    """
-    Retorna el resultado del requerimiento 3
-    """
-    # TODO: Modificar el requerimiento 3
-    pass
+def compare_req3(c1, c2):
+    """REQ 3: Precio desc. Empate: Peso desc."""
+    p1, p2 = float(c1["price"]), float(c2["price"])
+    if p1 > p2: return True
+    if p1 < p2: return False
+    # Empate: Peso de mayor a menor
+    return float(c1["weight_kg"]) > float(c2["weight_kg"])
+
+def req_3(catalog, n, brand, gpu_model):
+    inicio = get_time()
+    llave = (brand.lower() + gpu_model.lower()).strip()
+    equipos_filtrados = sc.get(catalog["brand_gpu"], llave)
+    
+    if not equipos_filtrados or al.size(equipos_filtrados) == 0:
+        return delta_time(inicio, get_time()), 0, 0, []
+
+    # qs.quick_sort(lista, criterio, modulo_lista)
+    qs.quick_sort(equipos_filtrados, compare_req3, al)
+
+    # 2. Extraer Top N y RAM
+    total_f = al.size(equipos_filtrados)
+    suma_ram = 0
+    top_n = []
+    for i in range(total_f):
+        comp = al.get_element(equipos_filtrados, i)
+        suma_ram += int(comp["ram_gb"])
+        if i < int(n):
+            top_n.append(comp)
+            
+    return delta_time(inicio, get_time()), total_f, round(suma_ram/total_f, 2), top_n
 
 
 def compare_req4(c1, c2):
